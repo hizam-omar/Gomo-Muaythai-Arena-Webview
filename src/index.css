@@ -14,8 +14,16 @@ body {
   margin: 0;
   min-width: 320px;
   background: #f8fafc;
+  font-family: Inter, "Segoe UI Variable", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-feature-settings: "kern" 1, "liga" 1;
 }
 
 .dark body {
   background: #020617;
+}
+
+.font-combat {
+  font-family: "Bahnschrift SemiCondensed", "Arial Narrow", "Roboto Condensed", Impact, sans-serif;
+  font-stretch: semi-condensed;
+  letter-spacing: 0.025em;
 }

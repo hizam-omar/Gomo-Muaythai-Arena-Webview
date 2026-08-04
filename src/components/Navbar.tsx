@@ -16,7 +16,7 @@ export function Navbar({ isFirebaseConnected, theme, onToggleTheme }: NavbarProp
         </div>
         <div className="ml-3 min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-base font-bold text-slate-900 dark:text-white">GOMO Muaythai Arena</h1>
+            <h1 className="font-combat text-lg font-black uppercase tracking-wide text-slate-900 dark:text-white">GOMO Muaythai Arena</h1>
             <span className={`rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
               isFirebaseConnected
                 ? 'border-emerald-300 bg-emerald-50 text-emerald-700'

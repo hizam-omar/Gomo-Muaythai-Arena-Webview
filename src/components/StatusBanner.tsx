@@ -28,7 +28,7 @@ function MetricBox({ value, label, className, onClick, selected = false }: Metri
         type="button"
         onClick={onClick}
         aria-pressed={selected}
-        className={`rounded-lg border px-2 py-2 text-center transition hover:-translate-y-0.5 hover:shadow-md ${className} ${selected ? 'ring-2 ring-red-500 ring-offset-2 dark:ring-offset-slate-900' : ''}`}
+        className={`font-combat rounded-lg border px-2 py-2 text-center transition hover:-translate-y-0.5 hover:shadow-md ${className} ${selected ? 'ring-2 ring-red-500 ring-offset-2 dark:ring-offset-slate-900' : ''}`}
       >
         <p className="text-base font-black leading-none">{value}</p>
         <p className="mt-1 truncate text-[8px] font-extrabold uppercase tracking-wide">{label}</p>
@@ -36,7 +36,7 @@ function MetricBox({ value, label, className, onClick, selected = false }: Metri
     );
   }
   return (
-    <div className={`rounded-lg border px-2 py-2 text-center ${className}`}>
+    <div className={`font-combat rounded-lg border px-2 py-2 text-center ${className}`}>
       <p className="text-base font-black leading-none">{value}</p>
       <p className="mt-1 truncate text-[8px] font-extrabold uppercase tracking-wide">{label}</p>
     </div>
@@ -63,7 +63,7 @@ export function StatusBanner({
             {liveCount > 0 && <span className="absolute h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />}
             <span className={`relative h-2.5 w-2.5 rounded-full ${liveCount > 0 ? 'bg-red-600' : 'bg-slate-400'}`} />
           </span>
-          <h2 className="truncate text-sm font-extrabold text-slate-900 dark:text-white">Fight Event &amp; Live Bouts</h2>
+          <h2 className="font-combat truncate text-base font-black uppercase text-slate-900 dark:text-white">Fight Event &amp; Live Bouts</h2>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <span className={`hidden rounded-full px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wide sm:inline ${

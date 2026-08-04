@@ -102,6 +102,7 @@ function AvatarPreview({ preview, onDismiss }: { preview: AvatarPreviewData; onD
 
 export function BoutCard({ bout }: { bout: Bout; key?: string }) {
   const [scoresExpanded, setScoresExpanded] = useState(false);
+  const [completedExpanded, setCompletedExpanded] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<AvatarPreviewData | null>(null);
   const isLive = bout.status === 'LIVE';
   const isCompleted = bout.status === 'COMPLETED';
@@ -146,13 +147,13 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
     <article className={`overflow-hidden rounded-xl border shadow-sm ${isLive ? 'border-red-500 bg-gradient-to-br from-red-50 via-white to-red-50 ring-2 ring-red-100 shadow-red-200/60 dark:from-red-950 dark:via-slate-900 dark:to-red-950 dark:ring-red-950 dark:shadow-none' : isCompleted ? completedCardStyle : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}>
       <div className={`flex items-start justify-between gap-3 border-b px-4 py-3 ${isLive ? 'border-red-200 bg-red-100/60' : isCompleted ? completedHeaderStyle : 'border-slate-100'}`}>
         <div className="min-w-0">
-          <h2 className="truncate text-sm font-extrabold text-slate-900 dark:text-white">{bout.eventName}</h2>
+          <h2 className="font-combat truncate text-base font-black uppercase text-slate-900 dark:text-white">{bout.eventName}</h2>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-slate-500">
             <span className="text-slate-800">Bout #{bout.boutNumber}</span>
-            {meta.map((item) => <span key={item}>• {item}</span>)}
+            {(!isCompleted || completedExpanded) && meta.map((item) => <span key={item}>• {item}</span>)}
           </div>
         </div>
-        <span className={`shrink-0 rounded-md px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white ${isLive ? 'bg-red-600' : isCompleted ? 'bg-emerald-600' : 'bg-slate-500'}`}>
+        <span className={`font-combat shrink-0 rounded-md px-2.5 py-1 text-xs font-black tracking-wide text-white ${isLive ? 'bg-red-600' : isCompleted ? 'bg-emerald-600' : 'bg-slate-500'}`}>
           <span className="flex items-center gap-1.5">
             {isLive ? <Radio className="h-3 w-3 animate-pulse" /> : isCompleted ? <CheckCircle2 className="h-3 w-3" /> : <Clock3 className="h-3 w-3" />}
             {isLive ? 'LIVE NOW' : isCompleted ? 'COMPLETED' : 'WAITING'}
@@ -160,13 +161,13 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
         </span>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 px-3 py-3 sm:gap-4 sm:px-5 sm:py-4">
-        <div className="flex min-w-0 items-center gap-2 rounded-xl border border-red-200 bg-red-50/90 p-2 dark:border-red-900 dark:bg-red-950/60 sm:gap-3 sm:p-3">
+      <div className={`grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 px-3 sm:gap-4 sm:px-5 ${isCompleted && !completedExpanded ? 'py-2.5' : 'py-3 sm:py-4'}`}>
+        <div className={`flex min-w-0 items-center gap-2 rounded-xl border border-red-200 bg-red-50/90 dark:border-red-900 dark:bg-red-950/60 sm:gap-3 ${isCompleted && !completedExpanded ? 'p-1.5 sm:p-2' : 'p-2 sm:p-3'}`}>
           <Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={(src) => setAvatarPreview({ src, name: bout.redName, corner: 'red' })} />
           <div className="min-w-0">
             <p className="text-[10px] font-extrabold tracking-wider text-red-700">RED</p>
-            <h3 className="truncate text-xs font-extrabold text-slate-900 dark:text-white sm:text-sm">{bout.redName}</h3>
-            <p className="truncate text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">{bout.redGym}</p>
+            <h3 className="font-combat truncate text-sm font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.redName}</h3>
+            {(!isCompleted || completedExpanded) && <p className="truncate text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">{bout.redGym}</p>}
           </div>
         </div>
 
@@ -175,17 +176,23 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
           {isLive && <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-ping" />}
         </div>
 
-        <div className="flex min-w-0 flex-row-reverse items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/90 p-2 text-right dark:border-blue-900 dark:bg-blue-950/60 sm:gap-3 sm:p-3">
+        <div className={`flex min-w-0 flex-row-reverse items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/90 text-right dark:border-blue-900 dark:bg-blue-950/60 sm:gap-3 ${isCompleted && !completedExpanded ? 'p-1.5 sm:p-2' : 'p-2 sm:p-3'}`}>
           <Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={(src) => setAvatarPreview({ src, name: bout.blueName, corner: 'blue' })} />
           <div className="min-w-0">
             <p className="text-[10px] font-extrabold tracking-wider text-blue-700">BLUE</p>
-            <h3 className="truncate text-xs font-extrabold text-slate-900 dark:text-white sm:text-sm">{bout.blueName}</h3>
-            <p className="truncate text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">{bout.blueGym}</p>
+            <h3 className="font-combat truncate text-sm font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.blueName}</h3>
+            {(!isCompleted || completedExpanded) && <p className="truncate text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">{bout.blueGym}</p>}
           </div>
         </div>
       </div>
 
-      {hasScores && bout.status !== 'WAITING' && (
+      {isCompleted && completedExpanded && bout.methodOrMedal && (
+        <div className="mx-3 mb-3 rounded-lg border border-slate-200 bg-white/75 px-3 py-2 text-center text-[10px] font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300 sm:mx-5">
+          Result method: <span className="font-black text-slate-900 dark:text-white">{bout.methodOrMedal}</span>
+        </div>
+      )}
+
+      {hasScores && bout.status !== 'WAITING' && (!isCompleted || completedExpanded) && (
         <div className={`mx-3 mb-3 overflow-hidden rounded-lg border sm:mx-5 ${isLive ? 'border-red-200 bg-white/90 dark:border-red-900 dark:bg-slate-900/90' : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800'}`}>
           <button
             type="button"
@@ -232,7 +239,7 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
         </div>
       )}
 
-      {(hasResult || hasMedal) && (
+      {(hasResult || hasMedal || isCompleted) && (
         <div className="flex flex-wrap justify-center gap-2 border-t border-white/70 bg-white/65 px-4 py-3 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/70">
           {hasResult && (
             <span className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1 text-[10px] font-black tracking-wide ${resultStyle}`}>
@@ -243,6 +250,17 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
             <span className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1 text-[10px] font-black tracking-wide ${medalStyle}`}>
               <Medal className="h-3.5 w-3.5" /> {medal} MEDAL
             </span>
+          )}
+          {isCompleted && (
+            <button
+              type="button"
+              onClick={() => setCompletedExpanded((expanded) => !expanded)}
+              aria-expanded={completedExpanded}
+              className="font-combat inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-black uppercase tracking-wide text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
+              {completedExpanded ? 'Hide Details' : 'Show Details'}
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${completedExpanded ? 'rotate-180' : ''}`} />
+            </button>
           )}
         </div>
       )}
