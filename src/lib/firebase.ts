@@ -22,8 +22,9 @@ export function initFirebase(): Firestore | null {
     if (!firebaseConfig.projectId) return null;
 
     const app = getApps()[0] || initializeApp(firebaseConfig);
-    const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || bundledConfig.firestoreDatabaseId;
-    db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
+    // GOMO uses the project's Firestore `(default)` database, matching
+    // FirebaseFirestore.getInstance(app) in the Android application.
+    db = getFirestore(app);
 
     // Analytics is optional and is not supported by every Android WebView.
     void isSupported().then((supported) => {
