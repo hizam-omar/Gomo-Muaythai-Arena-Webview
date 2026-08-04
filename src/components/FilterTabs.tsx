@@ -4,9 +4,10 @@ interface FilterTabsProps {
 }
 
 const tabs = [
-  { id: 'ALL', label: 'All Active' },
+  { id: 'ALL', label: 'All Bouts' },
   { id: 'LIVE', label: 'Live Now' },
   { id: 'WAITING', label: 'Waiting' },
+  { id: 'COMPLETED', label: 'Completed' },
 ];
 
 export function FilterTabs({ currentFilter, onSelectFilter }: FilterTabsProps) {

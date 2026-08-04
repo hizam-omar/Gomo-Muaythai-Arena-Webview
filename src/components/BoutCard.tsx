@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock3, Radio, UserRound } from 'lucide-react';
+import { CheckCircle2, Clock3, Radio, UserRound } from 'lucide-react';
 import type { Bout } from '../types';
 
 function Avatar({ src, name, corner }: { src?: string; name: string; corner: 'red' | 'blue' }) {
@@ -18,11 +18,12 @@ function Avatar({ src, name, corner }: { src?: string; name: string; corner: 're
 
 export function BoutCard({ bout }: { bout: Bout; key?: string }) {
   const isLive = bout.status === 'LIVE';
+  const isCompleted = bout.status === 'COMPLETED';
   const ring = bout.ring ? (bout.ring.toLowerCase().startsWith('ring') ? bout.ring : `Ring ${bout.ring}`) : '';
   const meta = [bout.tournamentRound, ring, bout.weightCategory].filter(Boolean);
 
   return (
-    <article className={`overflow-hidden rounded-xl bg-white border shadow-sm ${isLive ? 'border-red-400 ring-1 ring-red-100' : 'border-slate-200'}`}>
+    <article className={`overflow-hidden rounded-xl bg-white border shadow-sm ${isLive ? 'border-red-400 ring-1 ring-red-100' : isCompleted ? 'border-emerald-200' : 'border-slate-200'}`}>
       <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3">
         <div className="min-w-0">
           <h2 className="truncate text-sm font-extrabold text-slate-900">{bout.eventName}</h2>
@@ -31,10 +32,10 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
             {meta.map((item) => <span key={item}>• {item}</span>)}
           </div>
         </div>
-        <span className={`shrink-0 rounded-md px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white ${isLive ? 'bg-red-600' : 'bg-slate-500'}`}>
+        <span className={`shrink-0 rounded-md px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white ${isLive ? 'bg-red-600' : isCompleted ? 'bg-emerald-600' : 'bg-slate-500'}`}>
           <span className="flex items-center gap-1.5">
-            {isLive ? <Radio className="h-3 w-3 animate-pulse" /> : <Clock3 className="h-3 w-3" />}
-            {isLive ? 'LIVE NOW' : 'WAITING'}
+            {isLive ? <Radio className="h-3 w-3 animate-pulse" /> : isCompleted ? <CheckCircle2 className="h-3 w-3" /> : <Clock3 className="h-3 w-3" />}
+            {isLive ? 'LIVE NOW' : isCompleted ? 'COMPLETED' : 'WAITING'}
           </span>
         </span>
       </div>

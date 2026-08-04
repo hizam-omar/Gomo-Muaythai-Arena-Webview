@@ -7,7 +7,7 @@ import { StatusBanner } from './components/StatusBanner';
 import { initFirebase } from './lib/firebase';
 import type { Bout, Fighter, LiveFightCard } from './types';
 
-type FeedFilter = 'ALL' | 'LIVE' | 'WAITING';
+type FeedFilter = 'ALL' | 'LIVE' | 'WAITING' | 'COMPLETED';
 
 function asId(value: unknown): string {
   return value === null || value === undefined ? '' : String(value);
@@ -35,9 +35,9 @@ function mapCard(data: LiveFightCard, docId: string, fighters: Record<string, Fi
   const fighterId = asId(data.fighterId);
   const rawStatus = (data.status || '').trim().toUpperCase();
 
-  // Match Android's active fighter logic: only real bouts in active events,
-  // with LIVE first and UPCOMING presented to spectators as WAITING.
-  if (!fighterId || !['LIVE', 'UPCOMING', 'WAITING'].includes(rawStatus)) return null;
+  // Keep completed bouts visible while their event remains active. They are
+  // removed only after the whole event's eventStatus becomes Completed.
+  if (!fighterId || !['LIVE', 'UPCOMING', 'WAITING', 'COMPLETED', 'FINISHED'].includes(rawStatus)) return null;
   if ((data.eventStatus || '').trim().toUpperCase() === 'COMPLETED') return null;
 
   const fighter = fighters[fighterId] || {};
@@ -57,7 +57,9 @@ function mapCard(data: LiveFightCard, docId: string, fighters: Record<string, Fi
     tournamentRound: data.tournamentRound?.trim() || '',
     ring: data.ring?.trim() || '',
     weightCategory: data.weightCategory?.trim() || '',
-    status: rawStatus === 'LIVE' ? 'LIVE' : 'WAITING',
+    status: rawStatus === 'LIVE'
+      ? 'LIVE'
+      : ['COMPLETED', 'FINISHED'].includes(rawStatus) ? 'COMPLETED' : 'WAITING',
     redName: isRed ? fighterName : opponentName,
     redGym: isRed ? fighterClub : opponentClub,
     redAvatar: isRed ? avatar : undefined,
@@ -83,12 +85,14 @@ export default function App() {
         const parsed = JSON.parse(android.getBoutsJson());
         if (Array.isArray(parsed)) {
           const active = parsed
-            .filter((bout) => ['LIVE', 'UPCOMING', 'WAITING'].includes(String(bout.status).toUpperCase()))
+            .filter((bout) => ['LIVE', 'UPCOMING', 'WAITING', 'COMPLETED', 'FINISHED'].includes(String(bout.status).toUpperCase()))
             .map((bout) => ({
               ...bout,
               id: asId(bout.id),
               fighterId: asId(bout.fighterId),
-              status: String(bout.status).toUpperCase() === 'LIVE' ? 'LIVE' : 'WAITING',
+              status: String(bout.status).toUpperCase() === 'LIVE'
+                ? 'LIVE'
+                : ['COMPLETED', 'FINISHED'].includes(String(bout.status).toUpperCase()) ? 'COMPLETED' : 'WAITING',
               eventName: bout.eventName || 'Fight Event',
               eventType: bout.eventType || 'Normal Event',
               tournamentRound: bout.tournamentRound || '',
@@ -156,7 +160,8 @@ export default function App() {
     .map((card) => mapCard(card, card.docId, fighters))
     .filter((bout): bout is Bout => bout !== null)
     .sort((a, b) => {
-      const statusOrder = (a.status === 'LIVE' ? 0 : 1) - (b.status === 'LIVE' ? 0 : 1);
+      const priority = { LIVE: 0, WAITING: 1, COMPLETED: 2 } as const;
+      const statusOrder = priority[a.status] - priority[b.status];
       if (statusOrder !== 0) return statusOrder;
       return parseBoutNumber(a.boutNumber) - parseBoutNumber(b.boutNumber)
         || a.boutNumber.localeCompare(b.boutNumber)
@@ -167,6 +172,7 @@ export default function App() {
   const filteredBouts = bouts.filter((bout) => filter === 'ALL' || bout.status === filter);
   const liveCount = bouts.filter((bout) => bout.status === 'LIVE').length;
   const waitingCount = bouts.filter((bout) => bout.status === 'WAITING').length;
+  const completedCount = bouts.filter((bout) => bout.status === 'COMPLETED').length;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-red-600 selection:text-white">
@@ -176,6 +182,7 @@ export default function App() {
         <StatusBanner
           liveCount={liveCount}
           waitingCount={waitingCount}
+          completedCount={completedCount}
           isFirebaseConnected={isFirebaseConnected}
         />
         <FilterTabs currentFilter={filter} onSelectFilter={(value) => setFilter(value as FeedFilter)} />
@@ -188,7 +195,7 @@ export default function App() {
             </div>
           ) : filteredBouts.length === 0 ? (
             <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm">
-              <p className="text-sm font-semibold text-slate-700 mb-1">No {filter === 'ALL' ? 'live or waiting' : filter.toLowerCase()} fighters</p>
+              <p className="text-sm font-semibold text-slate-700 mb-1">No {filter === 'ALL' ? 'bouts for the active event' : `${filter.toLowerCase()} bouts`}</p>
               <p className="text-xs text-slate-500">The list updates automatically when a bout changes in the GOMO app.</p>
             </div>
           ) : filteredBouts.map((bout) => <BoutCard key={bout.id} bout={bout} />)}

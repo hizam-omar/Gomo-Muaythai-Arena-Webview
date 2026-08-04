@@ -1,4 +1,4 @@
-export type BoutStatus = 'LIVE' | 'WAITING';
+export type BoutStatus = 'LIVE' | 'WAITING' | 'COMPLETED';
 
 export interface Bout {
   id: string;
