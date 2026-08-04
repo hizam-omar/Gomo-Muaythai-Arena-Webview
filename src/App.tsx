@@ -13,6 +13,7 @@ import type { Bout, Fighter, LiveFightCard, RoundScore } from './types';
 
 type FeedFilter = 'ALL' | 'LIVE' | 'WAITING' | 'COMPLETED';
 type Theme = 'light' | 'dark';
+type MedalFilter = 'GOLD' | 'SILVER' | 'BRONZE' | null;
 
 let victoryAudioContext: AudioContext | null = null;
 
@@ -140,21 +141,15 @@ function parseBoutNumber(value: string): number {
   return digits ? Number(digits) : Number.MAX_SAFE_INTEGER;
 }
 
-function completedMedalPriority(medal: string): number {
+function completedCategoryPriority(medal: string, result: string): number {
   const value = medal.trim().toUpperCase();
-  if (value.includes('GOLD')) return 3;
-  if (value.includes('SILVER')) return 2;
-  if (value.includes('BRONZE')) return 1;
-  return 0;
-}
-
-function completedResultPriority(result: string): number {
-  switch (result.trim().toUpperCase()) {
-    case 'WIN': return 0;
-    case 'LOSS': return 1;
-    case 'DRAW': return 2;
-    default: return 3;
-  }
+  if (value.includes('GOLD')) return 0;
+  if (value.includes('SILVER')) return 1;
+  if (value.includes('BRONZE')) return 2;
+  if (result.trim().toUpperCase() === 'WIN') return 3;
+  if (result.trim().toUpperCase() === 'LOSS') return 4;
+  if (result.trim().toUpperCase() === 'DRAW') return 5;
+  return 6;
 }
 
 function scoreParts(value?: string): [string, string] | null {
@@ -243,7 +238,7 @@ function mapCard(data: LiveFightCard, docId: string, fighters: Record<string, Fi
     rounds,
     redPoints,
     bluePoints,
-    timestamp: Number(data.timestamp) || 0,
+    timestamp: Number(data.completedAt) || Number(data.timestamp) || 0,
   };
 }
 
@@ -258,6 +253,7 @@ export default function App() {
   const [fighters, setFighters] = useState<Record<string, Fighter>>({});
   const [filter, setFilter] = useState<FeedFilter>('ALL');
   const [fighterSearch, setFighterSearch] = useState('');
+  const [medalFilter, setMedalFilter] = useState<MedalFilter>(null);
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [victoryBout, setVictoryBout] = useState<Bout | null>(null);
@@ -297,7 +293,7 @@ export default function App() {
               rounds: Array.isArray(bout.rounds) ? bout.rounds : [],
               redPoints: bout.redPoints === undefined ? '' : String(bout.redPoints),
               bluePoints: bout.bluePoints === undefined ? '' : String(bout.bluePoints),
-              timestamp: Number(bout.timestamp) || 0,
+              timestamp: Number(bout.completedAt) || Number(bout.timestamp) || 0,
             })) as Bout[];
           setBridgeBouts(active);
         }
@@ -376,10 +372,10 @@ export default function App() {
       const statusOrder = priority[a.status] - priority[b.status];
       if (statusOrder !== 0) return statusOrder;
       if (a.status === 'COMPLETED' && b.status === 'COMPLETED') {
-        const medalOrder = completedMedalPriority(b.medal) - completedMedalPriority(a.medal);
-        if (medalOrder !== 0) return medalOrder;
-        const resultOrder = completedResultPriority(a.result) - completedResultPriority(b.result);
-        if (resultOrder !== 0) return resultOrder;
+        const categoryOrder = completedCategoryPriority(a.medal, a.result) - completedCategoryPriority(b.medal, b.result);
+        if (categoryOrder !== 0) return categoryOrder;
+        const latestOrder = b.timestamp - a.timestamp;
+        if (latestOrder !== 0) return latestOrder;
       }
       return parseBoutNumber(a.boutNumber) - parseBoutNumber(b.boutNumber)
         || a.boutNumber.localeCompare(b.boutNumber)
@@ -398,7 +394,8 @@ export default function App() {
       bout.eventName,
       bout.boutNumber,
     ].some((value) => value.toLocaleLowerCase().includes(normalizedSearch));
-    return matchesStatus && matchesFighter;
+    const matchesMedal = medalFilter === null || bout.medal.toUpperCase().includes(medalFilter);
+    return matchesStatus && matchesFighter && matchesMedal;
   });
   const liveCount = bouts.filter((bout) => bout.status === 'LIVE').length;
   const waitingCount = bouts.filter((bout) => bout.status === 'WAITING').length;
@@ -472,9 +469,17 @@ export default function App() {
           bronzeCount={medalCounts.bronze}
           isFirebaseConnected={isFirebaseConnected}
           onOpenStandings={() => setShowStandings(true)}
+          selectedMedal={medalFilter}
+          onSelectMedal={(medal) => {
+            setMedalFilter((current) => current === medal ? null : medal);
+            setFilter('COMPLETED');
+          }}
         />
         <FighterSearch value={fighterSearch} onChange={setFighterSearch} />
-        <FilterTabs currentFilter={filter} onSelectFilter={(value) => setFilter(value as FeedFilter)} />
+        <FilterTabs currentFilter={filter} onSelectFilter={(value) => {
+          setFilter(value as FeedFilter);
+          setMedalFilter(null);
+        }} />
 
         <div className="space-y-3" aria-live="polite">
           {isLoading && bouts.length === 0 ? (
@@ -485,7 +490,10 @@ export default function App() {
           ) : filteredBouts.length === 0 ? (
             <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <p className="text-sm font-semibold text-slate-700 mb-1 dark:text-slate-200">
-                {normalizedSearch ? `No fighter found for “${fighterSearch.trim()}”` : `No ${filter === 'ALL' ? 'bouts for the active event' : `${filter.toLowerCase()} bouts`}`}
+                {normalizedSearch
+                  ? `No fighter found for “${fighterSearch.trim()}”`
+                  : medalFilter ? `No ${medalFilter.toLowerCase()} medal winners yet`
+                    : `No ${filter === 'ALL' ? 'bouts for the active event' : `${filter.toLowerCase()} bouts`}`}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {normalizedSearch ? 'Try another fighter or opponent name.' : 'The list updates automatically when a bout changes in the GOMO app.'}

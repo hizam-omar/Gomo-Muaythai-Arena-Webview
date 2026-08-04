@@ -9,15 +9,32 @@ interface StatusBannerProps {
   bronzeCount: number;
   isFirebaseConnected: boolean;
   onOpenStandings: () => void;
+  selectedMedal: 'GOLD' | 'SILVER' | 'BRONZE' | null;
+  onSelectMedal: (medal: 'GOLD' | 'SILVER' | 'BRONZE') => void;
 }
 
 interface MetricBoxProps {
   value: number;
   label: string;
   className: string;
+  onClick?: () => void;
+  selected?: boolean;
 }
 
-function MetricBox({ value, label, className }: MetricBoxProps) {
+function MetricBox({ value, label, className, onClick, selected = false }: MetricBoxProps) {
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={selected}
+        className={`rounded-lg border px-2 py-2 text-center transition hover:-translate-y-0.5 hover:shadow-md ${className} ${selected ? 'ring-2 ring-red-500 ring-offset-2 dark:ring-offset-slate-900' : ''}`}
+      >
+        <p className="text-base font-black leading-none">{value}</p>
+        <p className="mt-1 truncate text-[8px] font-extrabold uppercase tracking-wide">{label}</p>
+      </button>
+    );
+  }
   return (
     <div className={`rounded-lg border px-2 py-2 text-center ${className}`}>
       <p className="text-base font-black leading-none">{value}</p>
@@ -35,6 +52,8 @@ export function StatusBanner({
   bronzeCount,
   isFirebaseConnected,
   onOpenStandings,
+  selectedMedal,
+  onSelectMedal,
 }: StatusBannerProps) {
   return (
     <section className="mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -62,9 +81,9 @@ export function StatusBanner({
         <MetricBox value={liveCount} label="Live" className="border-red-200 bg-red-50 text-red-700" />
         <MetricBox value={waitingCount} label="Waiting" className="border-slate-200 bg-slate-50 text-slate-700" />
         <MetricBox value={completedCount} label="Completed" className="border-emerald-200 bg-emerald-50 text-emerald-700" />
-        <MetricBox value={goldCount} label="🥇 Gold" className="border-amber-300 bg-amber-50 text-amber-700" />
-        <MetricBox value={silverCount} label="🥈 Silver" className="border-slate-300 bg-slate-100 text-slate-600" />
-        <MetricBox value={bronzeCount} label="🥉 Bronze" className="border-orange-300 bg-orange-50 text-orange-700" />
+        <MetricBox value={goldCount} label="🥇 Gold" className="border-amber-300 bg-amber-50 text-amber-700" selected={selectedMedal === 'GOLD'} onClick={() => onSelectMedal('GOLD')} />
+        <MetricBox value={silverCount} label="🥈 Silver" className="border-slate-300 bg-slate-100 text-slate-600" selected={selectedMedal === 'SILVER'} onClick={() => onSelectMedal('SILVER')} />
+        <MetricBox value={bronzeCount} label="🥉 Bronze" className="border-orange-300 bg-orange-50 text-orange-700" selected={selectedMedal === 'BRONZE'} onClick={() => onSelectMedal('BRONZE')} />
       </div>
     </section>
   );

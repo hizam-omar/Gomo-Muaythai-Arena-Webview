@@ -68,5 +68,6 @@ export interface LiveFightCard {
   rounds?: RoundScore[];
   redPoints?: string | number;
   bluePoints?: string | number;
+  completedAt?: number;
   timestamp?: number;
 }
