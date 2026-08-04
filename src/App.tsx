@@ -467,7 +467,6 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-red-600 selection:text-white dark:bg-slate-950 dark:text-slate-100">
       <Navbar
-        eventName={activeEventName}
         isFirebaseConnected={isFirebaseConnected}
         theme={theme}
         onToggleTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
