@@ -30,7 +30,7 @@ export function VictoryOverlay({ bout, onDismiss }: VictoryOverlayProps) {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'spring', damping: 14, stiffness: 150 }}
-        className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl"
+        className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl dark:bg-slate-900"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border-2 border-amber-400 bg-amber-50">
@@ -42,10 +42,10 @@ export function VictoryOverlay({ bout, onDismiss }: VictoryOverlayProps) {
         <div className="my-5 border-y border-slate-100 py-5">
           <h2 className="text-2xl font-black text-emerald-700">{fighterName.toUpperCase()}</h2>
           <p className="my-1 text-[10px] font-extrabold tracking-[0.18em] text-slate-400">DEFEATED</p>
-          <p className="text-lg font-extrabold text-slate-800">{opponentName.toUpperCase()}</p>
+          <p className="text-lg font-extrabold text-slate-800 dark:text-white">{opponentName.toUpperCase()}</p>
         </div>
 
-        <div className="rounded-xl bg-red-50 p-3">
+        <div className="rounded-xl bg-red-50 p-3 dark:bg-red-950/60">
           <p className="font-extrabold text-red-700">{bout.eventName}</p>
           <p className="mt-1 text-xs font-semibold text-slate-600">
             {bout.methodOrMedal ? `via ${bout.methodOrMedal}` : 'Win'}

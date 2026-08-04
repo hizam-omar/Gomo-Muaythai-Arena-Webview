@@ -12,6 +12,7 @@ import { initFirebase } from './lib/firebase';
 import type { Bout, Fighter, LiveFightCard, RoundScore } from './types';
 
 type FeedFilter = 'ALL' | 'LIVE' | 'WAITING' | 'COMPLETED';
+type Theme = 'light' | 'dark';
 
 let victoryAudioContext: AudioContext | null = null;
 
@@ -179,6 +180,11 @@ function mapCard(data: LiveFightCard, docId: string, fighters: Record<string, Fi
 }
 
 export default function App() {
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = window.localStorage.getItem('gomo-theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
   const [bridgeBouts, setBridgeBouts] = useState<Bout[]>([]);
   const [rawCards, setRawCards] = useState<Array<LiveFightCard & { docId: string }>>([]);
   const [fighters, setFighters] = useState<Record<string, Fighter>>({});
@@ -189,6 +195,11 @@ export default function App() {
   const [victoryBout, setVictoryBout] = useState<Bout | null>(null);
   const [showStandings, setShowStandings] = useState(false);
   const previousBoutStates = useRef<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    window.localStorage.setItem('gomo-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     const android = (window as Window & { Android?: { getBoutsJson?: () => string } }).Android;
@@ -376,8 +387,12 @@ export default function App() {
   const dismissVictory = useCallback(() => setVictoryBout(null), []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-red-600 selection:text-white">
-      <Navbar isFirebaseConnected={isFirebaseConnected} />
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-red-600 selection:text-white dark:bg-slate-950 dark:text-slate-100">
+      <Navbar
+        isFirebaseConnected={isFirebaseConnected}
+        theme={theme}
+        onToggleTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
+      />
 
       <main className="max-w-4xl mx-auto px-4 py-6 flex-grow w-full">
         <StatusBanner
@@ -395,16 +410,16 @@ export default function App() {
 
         <div className="space-y-3" aria-live="polite">
           {isLoading && bouts.length === 0 ? (
-            <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm">
+            <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mx-auto mb-3 h-6 w-6 rounded-full border-2 border-slate-200 border-t-red-600 animate-spin" />
-              <p className="text-sm font-semibold text-slate-700">Loading active fighters…</p>
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Loading active fighters…</p>
             </div>
           ) : filteredBouts.length === 0 ? (
-            <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm">
-              <p className="text-sm font-semibold text-slate-700 mb-1">
+            <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <p className="text-sm font-semibold text-slate-700 mb-1 dark:text-slate-200">
                 {normalizedSearch ? `No fighter found for “${fighterSearch.trim()}”` : `No ${filter === 'ALL' ? 'bouts for the active event' : `${filter.toLowerCase()} bouts`}`}
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {normalizedSearch ? 'Try another fighter or opponent name.' : 'The list updates automatically when a bout changes in the GOMO app.'}
               </p>
             </div>
@@ -412,7 +427,7 @@ export default function App() {
         </div>
       </main>
 
-      <footer className="bg-white border-t border-slate-200 px-8 py-6 mt-8">
+      <footer className="bg-white border-t border-slate-200 px-8 py-6 mt-8 dark:border-slate-800 dark:bg-slate-900">
         <div className="max-w-4xl mx-auto text-center text-xs text-slate-500 font-medium">
           <p>© 2026 GOMO Muaythai Club. Spectator Live Arena &amp; Scoreboard Feed.</p>
         </div>

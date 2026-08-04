@@ -37,18 +37,18 @@ export function StatusBanner({
   onOpenStandings,
 }: StatusBannerProps) {
   return (
-    <section className="mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+    <section className="mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className="relative flex h-2.5 w-2.5 shrink-0">
             {liveCount > 0 && <span className="absolute h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />}
             <span className={`relative h-2.5 w-2.5 rounded-full ${liveCount > 0 ? 'bg-red-600' : 'bg-slate-400'}`} />
           </span>
-          <h2 className="truncate text-sm font-extrabold text-slate-900">Fight Event &amp; Live Bouts</h2>
+          <h2 className="truncate text-sm font-extrabold text-slate-900 dark:text-white">Fight Event &amp; Live Bouts</h2>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <span className={`hidden rounded-full px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wide sm:inline ${
-            isFirebaseConnected ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
+            isFirebaseConnected ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
           }`}>
             {isFirebaseConnected ? 'Live Sync' : 'WebView Feed'}
           </span>
