@@ -7,7 +7,7 @@ import { Navbar } from './components/Navbar';
 import { StatusBanner } from './components/StatusBanner';
 import { VictoryOverlay } from './components/VictoryOverlay';
 import { initFirebase } from './lib/firebase';
-import type { Bout, Fighter, LiveFightCard } from './types';
+import type { Bout, Fighter, LiveFightCard, RoundScore } from './types';
 
 type FeedFilter = 'ALL' | 'LIVE' | 'WAITING' | 'COMPLETED';
 
@@ -69,6 +69,27 @@ function parseBoutNumber(value: string): number {
   return digits ? Number(digits) : Number.MAX_SAFE_INTEGER;
 }
 
+function scoreParts(value?: string): [string, string] | null {
+  if (!value?.trim()) return null;
+  const parts = value.split(/[-/:,]/).map((part) => part.trim());
+  return parts.length >= 2 && parts[0] !== '' && parts[1] !== ''
+    ? [parts[0], parts[1]]
+    : null;
+}
+
+function mapRoundScores(data: LiveFightCard, gomoIsRed: boolean): RoundScore[] {
+  const values = [data.r1Score, data.r2Score, data.r3Score, data.r4Score, data.r5Score];
+  return values.flatMap((value, index) => {
+    const parts = scoreParts(value);
+    if (!parts) return [];
+    return [{
+      round: `R${index + 1}`,
+      red: gomoIsRed ? parts[0] : parts[1],
+      blue: gomoIsRed ? parts[1] : parts[0],
+    }];
+  });
+}
+
 function usableAvatar(fighter: Fighter): string | undefined {
   const avatar = fighter.imageUri || fighter.photoUrl || fighter.avatarUrl;
   if (!avatar) return undefined;
@@ -98,6 +119,16 @@ function mapCard(data: LiveFightCard, docId: string, fighters: Record<string, Fi
   const opponentClub = data.opponentClub?.trim() || 'Opponent Club';
   const isRed = !data.corner || data.corner.toUpperCase() === 'RED';
   const avatar = usableAvatar(fighter);
+  const rounds = mapRoundScores(data, isRed);
+  const totalParts = scoreParts(data.score);
+  const calculatedRedTotal = rounds.reduce((total, round) => total + (Number(round.red) || 0), 0);
+  const calculatedBlueTotal = rounds.reduce((total, round) => total + (Number(round.blue) || 0), 0);
+  const redPoints = totalParts
+    ? (isRed ? totalParts[0] : totalParts[1])
+    : rounds.length > 0 ? String(calculatedRedTotal) : '';
+  const bluePoints = totalParts
+    ? (isRed ? totalParts[1] : totalParts[0])
+    : rounds.length > 0 ? String(calculatedBlueTotal) : '';
 
   return {
     id: asId(data.id) || docId,
@@ -121,6 +152,9 @@ function mapCard(data: LiveFightCard, docId: string, fighters: Record<string, Fi
     result: data.result?.trim().toUpperCase() || '',
     methodOrMedal: data.methodOrMedal?.trim() || '',
     medal: data.medal?.trim() || '',
+    rounds,
+    redPoints,
+    bluePoints,
     timestamp: Number(data.timestamp) || 0,
   };
 }
@@ -160,6 +194,9 @@ export default function App() {
               result: String(bout.result || '').trim().toUpperCase(),
               methodOrMedal: bout.methodOrMedal || '',
               medal: bout.medal || '',
+              rounds: Array.isArray(bout.rounds) ? bout.rounds : [],
+              redPoints: bout.redPoints === undefined ? '' : String(bout.redPoints),
+              bluePoints: bout.bluePoints === undefined ? '' : String(bout.bluePoints),
               timestamp: Number(bout.timestamp) || 0,
             })) as Bout[];
           setBridgeBouts(active);

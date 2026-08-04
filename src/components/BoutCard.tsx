@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, Clock3, Medal, Radio, UserRound } from 'lucide-react';
+import { CheckCircle2, Clock3, ListOrdered, Medal, Radio, UserRound } from 'lucide-react';
 import type { Bout } from '../types';
 
 function Avatar({ src, name, corner }: { src?: string; name: string; corner: 'red' | 'blue' }) {
@@ -28,10 +28,11 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
     : medal.includes('SILVER')
       ? 'border-slate-300 bg-slate-100 text-slate-700'
       : 'border-orange-300 bg-orange-50 text-orange-700';
+  const hasScores = bout.rounds.length > 0 || bout.redPoints !== '' || bout.bluePoints !== '';
 
   return (
-    <article className={`overflow-hidden rounded-xl bg-white border shadow-sm ${isLive ? 'border-red-400 ring-1 ring-red-100' : isCompleted ? 'border-emerald-200' : 'border-slate-200'}`}>
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3">
+    <article className={`overflow-hidden rounded-xl border shadow-sm ${isLive ? 'border-red-500 bg-gradient-to-br from-red-50 via-white to-red-50 ring-2 ring-red-100 shadow-red-200/60' : isCompleted ? 'border-emerald-200 bg-white' : 'border-slate-200 bg-white'}`}>
+      <div className={`flex items-start justify-between gap-3 border-b px-4 py-3 ${isLive ? 'border-red-200 bg-red-100/60' : 'border-slate-100'}`}>
         <div className="min-w-0">
           <h2 className="truncate text-sm font-extrabold text-slate-900">{bout.eventName}</h2>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-slate-500">
@@ -71,6 +72,41 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
           </div>
         </div>
       </div>
+
+      {hasScores && bout.status !== 'WAITING' && (
+        <div className={`mx-3 mb-3 rounded-lg border p-3 sm:mx-5 ${isLive ? 'border-red-200 bg-white/90' : 'border-slate-200 bg-slate-50'}`}>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-600">
+              <ListOrdered className="h-3.5 w-3.5 text-red-600" /> Round Points
+            </span>
+            {(bout.redPoints !== '' || bout.bluePoints !== '') && (
+              <span className="rounded-md bg-slate-900 px-2 py-1 text-[10px] font-black text-white">
+                Total <span className="text-red-300">{bout.redPoints || '–'}</span>
+                <span className="px-1 text-slate-400">–</span>
+                <span className="text-blue-300">{bout.bluePoints || '–'}</span>
+              </span>
+            )}
+          </div>
+          {bout.rounds.length > 0 && (
+            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
+              {bout.rounds.map((round) => (
+                <div key={round.round} className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-center shadow-sm">
+                  <p className="text-[9px] font-black text-slate-400">{round.round}</p>
+                  <p className="mt-0.5 text-xs font-black">
+                    <span className="text-red-600">{round.red}</span>
+                    <span className="px-1 text-slate-300">–</span>
+                    <span className="text-blue-600">{round.blue}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="mt-2 flex justify-center gap-3 text-[8px] font-extrabold uppercase tracking-wider">
+            <span className="text-red-600">Red</span>
+            <span className="text-blue-600">Blue</span>
+          </div>
+        </div>
+      )}
 
       {hasMedal && (
         <div className="flex justify-center border-t border-slate-100 bg-slate-50 px-4 py-2.5">

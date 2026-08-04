@@ -1,5 +1,11 @@
 export type BoutStatus = 'LIVE' | 'WAITING' | 'COMPLETED';
 
+export interface RoundScore {
+  round: string;
+  red: string;
+  blue: string;
+}
+
 export interface Bout {
   id: string;
   fighterId: string;
@@ -20,6 +26,9 @@ export interface Bout {
   result: string;
   methodOrMedal: string;
   medal: string;
+  rounds: RoundScore[];
+  redPoints: string;
+  bluePoints: string;
   timestamp: number;
 }
 
@@ -50,5 +59,14 @@ export interface LiveFightCard {
   result?: string;
   methodOrMedal?: string;
   medal?: string;
+  score?: string;
+  r1Score?: string;
+  r2Score?: string;
+  r3Score?: string;
+  r4Score?: string;
+  r5Score?: string;
+  rounds?: RoundScore[];
+  redPoints?: string | number;
+  bluePoints?: string | number;
   timestamp?: number;
 }
