@@ -9,11 +9,50 @@ interface AvatarPreviewData {
   corner: 'red' | 'blue';
 }
 
+function avatarSeed(name: string) {
+  return Array.from(name.trim().toUpperCase()).reduce((hash, character) => ((hash << 5) - hash + character.charCodeAt(0)) | 0, 17) >>> 0;
+}
+
+function GeneratedFighterAvatar({ name, corner }: { name: string; corner: 'red' | 'blue' }) {
+  const seed = avatarSeed(name);
+  const skinTones = ['#f2c7a5', '#d9a276', '#b97850', '#8f563b', '#6f402e'];
+  const hairColors = ['#171717', '#3f2a1d', '#6b4226', '#1f2937', '#7c2d12'];
+  const skin = skinTones[seed % skinTones.length];
+  const hair = hairColors[(seed >>> 3) % hairColors.length];
+  const hairStyle = (seed >>> 5) % 4;
+  const shirt = corner === 'red' ? '#b91c1c' : '#1d4ed8';
+  const background = corner === 'red' ? '#fee2e2' : '#dbeafe';
+  const accent = corner === 'red' ? '#ef4444' : '#3b82f6';
+  const initial = name.trim().match(/[\p{L}\p{N}]/u)?.[0]?.toUpperCase() || '?';
+
+  return (
+    <svg viewBox="0 0 100 100" className="h-full w-full" role="img" aria-label={`Generated avatar for ${name}`}>
+      <rect width="100" height="100" fill={background} />
+      <circle cx="78" cy="20" r="18" fill={accent} opacity="0.18" />
+      <circle cx="18" cy="82" r="24" fill={accent} opacity="0.13" />
+      <path d="M16 100c2-25 15-37 34-37s32 12 34 37" fill={shirt} />
+      <path d="M39 60h22v14c-7 5-15 5-22 0z" fill={skin} />
+      <circle cx="29" cy="43" r="5" fill={skin} />
+      <circle cx="71" cy="43" r="5" fill={skin} />
+      <ellipse cx="50" cy="41" rx="22" ry="27" fill={skin} />
+      {hairStyle === 0 && <path d="M28 40c-1-22 12-30 24-30 15 0 23 11 20 31-5-9-9-15-18-19-8 8-16 11-26 12z" fill={hair} />}
+      {hairStyle === 1 && <><path d="M29 38c0-19 10-28 22-28 13 0 22 10 21 29-9-3-15-8-20-15-6 7-13 11-23 14z" fill={hair} /><circle cx="50" cy="10" r="8" fill={hair} /></>}
+      {hairStyle === 2 && <><path d="M29 35c1-17 10-25 22-25 12 0 20 8 21 25-12-8-29-8-43 0z" fill={hair} /><rect x="28" y="30" width="44" height="7" rx="3.5" fill={accent} /></>}
+      {hairStyle === 3 && <path d="M29 38c0-18 9-28 22-28 11 0 19 7 21 22-7-5-13-8-20-12-6 8-13 13-23 18z" fill={hair} />}
+      <ellipse cx="42" cy="43" rx="2.2" ry="2.8" fill="#1e293b" />
+      <ellipse cx="58" cy="43" rx="2.2" ry="2.8" fill="#1e293b" />
+      <path d="M47 53c2 2 4 2 6 0" fill="none" stroke="#9f4f45" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M35 39c4-2 8-2 11 0M54 39c3-2 7-2 11 0" fill="none" stroke={hair} strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="50" cy="84" r="10" fill="white" opacity="0.94" />
+      <text x="50" y="89" textAnchor="middle" fontSize="15" fontWeight="900" fill={shirt}>{initial}</text>
+    </svg>
+  );
+}
+
 function Avatar({ src, name, corner, onPreview }: AvatarPreviewData & { onPreview: (src?: string) => void }) {
   const [failed, setFailed] = useState(false);
   const border = corner === 'red' ? 'border-red-700' : 'border-blue-700';
   const background = corner === 'red' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700';
-  const initial = name.trim().match(/[\p{L}\p{N}]/u)?.[0]?.toUpperCase() || '?';
 
   return (
     <button
@@ -25,7 +64,7 @@ function Avatar({ src, name, corner, onPreview }: AvatarPreviewData & { onPrevie
       {src && !failed ? (
         <img src={src} alt={`${name} avatar`} className="h-full w-full object-cover" onError={() => setFailed(true)} />
       ) : (
-        <span className="text-xl font-black" aria-label={`${name} initial`}>{initial}</span>
+        <GeneratedFighterAvatar name={name} corner={corner} />
       )}
     </button>
   );
@@ -33,7 +72,6 @@ function Avatar({ src, name, corner, onPreview }: AvatarPreviewData & { onPrevie
 
 function AvatarPreview({ preview, onDismiss }: { preview: AvatarPreviewData; onDismiss: () => void }) {
   const [failed, setFailed] = useState(false);
-  const initial = preview.name.trim().match(/[\p{L}\p{N}]/u)?.[0]?.toUpperCase() || '?';
   const isRed = preview.corner === 'red';
 
   useEffect(() => {
@@ -53,7 +91,7 @@ function AvatarPreview({ preview, onDismiss }: { preview: AvatarPreviewData; onD
         <div className={`mx-auto mt-5 flex aspect-square w-full max-w-[280px] items-center justify-center overflow-hidden rounded-full border-4 ${isRed ? 'border-red-600 bg-red-100 text-red-700' : 'border-blue-600 bg-blue-100 text-blue-700'}`}>
           {preview.src && !failed
             ? <img src={preview.src} alt={`${preview.name} large avatar`} className="h-full w-full object-cover" onError={() => setFailed(true)} />
-            : <span className="text-8xl font-black">{initial}</span>}
+            : <GeneratedFighterAvatar name={preview.name} corner={preview.corner} />}
         </div>
         <p className={`mt-4 text-[10px] font-black uppercase tracking-[0.18em] ${isRed ? 'text-red-700' : 'text-blue-700'}`}>{isRed ? 'Red Corner' : 'Blue Corner'}</p>
         <h2 className="mt-1 text-xl font-black text-slate-900 dark:text-white">{preview.name}</h2>
