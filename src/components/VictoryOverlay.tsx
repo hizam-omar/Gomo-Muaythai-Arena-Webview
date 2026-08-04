@@ -36,11 +36,11 @@ export function VictoryOverlay({ bout, onDismiss }: VictoryOverlayProps) {
         <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border-2 border-amber-400 bg-amber-50">
           <Trophy className="h-10 w-10 text-amber-500" />
         </div>
-        <p className="text-sm font-black tracking-[0.16em] text-amber-500">VICTORY UNLOCKED!</p>
+        <p className="font-combat text-lg font-black tracking-[0.16em] text-amber-500">VICTORY UNLOCKED!</p>
         <p className="mt-1 text-sm text-slate-500">Fight completed successfully</p>
 
         <div className="my-5 border-y border-slate-100 py-5">
-          <h2 className="text-2xl font-black text-emerald-700">{fighterName.toUpperCase()}</h2>
+          <h2 className="font-combat text-3xl font-black text-emerald-700">{fighterName.toUpperCase()}</h2>
           <p className="my-1 text-[10px] font-extrabold tracking-[0.18em] text-slate-400">DEFEATED</p>
           <p className="text-lg font-extrabold text-slate-800 dark:text-white">{opponentName.toUpperCase()}</p>
         </div>

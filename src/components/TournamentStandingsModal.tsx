@@ -99,7 +99,7 @@ export function TournamentStandingsModal({
               <Trophy className="h-5 w-5 text-amber-400" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-sm font-black sm:text-base">Tournament Standings</h2>
+              <h2 className="font-combat text-lg font-black uppercase sm:text-xl">Tournament Standings</h2>
               <p className="truncate text-[10px] font-semibold text-slate-300 sm:text-xs">{eventName || 'Current Active Event'}</p>
             </div>
           </div>
@@ -135,7 +135,7 @@ export function TournamentStandingsModal({
                     <StandingAvatar standing={standing} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <h3 className="truncate text-sm font-extrabold text-slate-900 dark:text-white">{standing.name}</h3>
+                        <h3 className="font-combat truncate text-base font-black uppercase text-slate-900 dark:text-white">{standing.name}</h3>
                         {standing.medal && (
                           <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[8px] font-black text-amber-700 ring-1 ring-amber-200">
                             <Medal className="h-3 w-3" /> {standing.medal}
