@@ -1,28 +1,27 @@
-import React from 'react';
-
 interface FilterTabsProps {
   currentFilter: string;
   onSelectFilter: (filter: string) => void;
 }
 
-export const FilterTabs: React.FC<FilterTabsProps> = ({ currentFilter, onSelectFilter }) => {
-  const tabs = [
-    { id: 'ALL', label: 'All Bouts' },
-    { id: 'LIVE', label: 'LIVE' },
-    { id: 'UPCOMING', label: 'UPCOMING' },
-    { id: 'COMPLETED', label: 'COMPLETED' }
-  ];
+const tabs = [
+  { id: 'ALL', label: 'All Active' },
+  { id: 'LIVE', label: 'Live Now' },
+  { id: 'WAITING', label: 'Waiting' },
+];
 
+export function FilterTabs({ currentFilter, onSelectFilter }: FilterTabsProps) {
   return (
-    <div className="flex space-x-2 mb-6 overflow-x-auto pb-2">
-      {tabs.map(tab => (
+    <div className="mb-5 flex gap-2 overflow-x-auto pb-1" aria-label="Filter fighters by bout status">
+      {tabs.map((tab) => (
         <button
           key={tab.id}
+          type="button"
           onClick={() => onSelectFilter(tab.id)}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase transition shadow-sm ${
+          aria-pressed={currentFilter === tab.id}
+          className={`shrink-0 rounded-lg px-4 py-2 text-xs font-extrabold uppercase tracking-wide transition ${
             currentFilter === tab.id
-              ? 'bg-red-600 text-white shadow-red-500/20 shadow-md'
-              : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
+              ? 'bg-red-600 text-white shadow-md shadow-red-500/20'
+              : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300'
           }`}
         >
           {tab.label}
@@ -30,4 +29,4 @@ export const FilterTabs: React.FC<FilterTabsProps> = ({ currentFilter, onSelectF
       ))}
     </div>
   );
-};
+}
