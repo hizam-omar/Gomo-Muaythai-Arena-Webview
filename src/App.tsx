@@ -1,170 +1,205 @@
-import React, { useState, useEffect } from 'react';
-import confetti from 'canvas-confetti';
-import { Bout } from './types';
+import { useEffect, useMemo, useState } from 'react';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { BoutCard } from './components/BoutCard';
+import { FilterTabs } from './components/FilterTabs';
 import { Navbar } from './components/Navbar';
 import { StatusBanner } from './components/StatusBanner';
-import { FilterTabs } from './components/FilterTabs';
-import { BoutCard } from './components/BoutCard';
 import { initFirebase } from './lib/firebase';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import type { Bout, Fighter, LiveFightCard } from './types';
 
-const DEFAULT_BOUTS: Bout[] = [];
+type FeedFilter = 'ALL' | 'LIVE' | 'WAITING';
+
+function asId(value: unknown): string {
+  return value === null || value === undefined ? '' : String(value);
+}
+
+function parseBoutNumber(value: string): number {
+  const digits = value.match(/\d+/)?.[0];
+  return digits ? Number(digits) : Number.MAX_SAFE_INTEGER;
+}
+
+function usableAvatar(fighter: Fighter): string | undefined {
+  const avatar = fighter.imageUri || fighter.photoUrl || fighter.avatarUrl;
+  if (!avatar) return undefined;
+
+  // Local Android content/file paths cannot be read by a remotely hosted page.
+  // Newer app photos are data URLs and work in both Android and the web.
+  if (/^(content:|file:|\/)/i.test(avatar)) return undefined;
+  if (avatar.startsWith('data:image') || avatar.length > 200) {
+    return avatar.startsWith('data:image') ? avatar : `data:image/jpeg;base64,${avatar}`;
+  }
+  return avatar;
+}
+
+function mapCard(data: LiveFightCard, docId: string, fighters: Record<string, Fighter>): Bout | null {
+  const fighterId = asId(data.fighterId);
+  const rawStatus = (data.status || '').trim().toUpperCase();
+
+  // Match Android's active fighter logic: only real bouts in active events,
+  // with LIVE first and UPCOMING presented to spectators as WAITING.
+  if (!fighterId || !['LIVE', 'UPCOMING', 'WAITING'].includes(rawStatus)) return null;
+  if ((data.eventStatus || '').trim().toUpperCase() === 'COMPLETED') return null;
+
+  const fighter = fighters[fighterId] || {};
+  const fighterName = fighter.nickname?.trim() || fighter.name?.trim() || 'GOMO Fighter';
+  const fighterClub = fighter.club?.trim() || 'Kelab Muaythai Gomo';
+  const opponentName = data.opponentName?.trim() || 'Opponent';
+  const opponentClub = data.opponentClub?.trim() || 'Opponent Club';
+  const isRed = !data.corner || data.corner.toUpperCase() === 'RED';
+  const avatar = usableAvatar(fighter);
+
+  return {
+    id: asId(data.id) || docId,
+    fighterId,
+    boutNumber: data.boutNumber?.trim() || asId(data.id) || docId,
+    eventName: data.eventName?.trim() || 'Fight Event',
+    eventType: data.eventType?.trim() || 'Normal Event',
+    tournamentRound: data.tournamentRound?.trim() || '',
+    ring: data.ring?.trim() || '',
+    weightCategory: data.weightCategory?.trim() || '',
+    status: rawStatus === 'LIVE' ? 'LIVE' : 'WAITING',
+    redName: isRed ? fighterName : opponentName,
+    redGym: isRed ? fighterClub : opponentClub,
+    redAvatar: isRed ? avatar : undefined,
+    blueName: isRed ? opponentName : fighterName,
+    blueGym: isRed ? opponentClub : fighterClub,
+    blueAvatar: isRed ? undefined : avatar,
+    timestamp: Number(data.timestamp) || 0,
+  };
+}
 
 export default function App() {
-  const [bouts, setBouts] = useState<Bout[]>(DEFAULT_BOUTS);
-  const [filter, setFilter] = useState<string>('ALL');
+  const [bridgeBouts, setBridgeBouts] = useState<Bout[]>([]);
+  const [rawCards, setRawCards] = useState<Array<LiveFightCard & { docId: string }>>([]);
+  const [fighters, setFighters] = useState<Record<string, Fighter>>({});
+  const [filter, setFilter] = useState<FeedFilter>('ALL');
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [rawBouts, setRawBouts] = useState<any[]>([]);
-  const [fightersMap, setFightersMap] = useState<Record<string, any>>({});
-
-  // Check for Android bridge or Firebase on mount
   useEffect(() => {
-    // Check Android Interface
-    if (typeof (window as any).Android !== 'undefined') {
+    const android = (window as Window & { Android?: { getBoutsJson?: () => string } }).Android;
+    if (android?.getBoutsJson) {
       try {
-        const jsonStr = (window as any).Android.getBoutsJson();
-        if (jsonStr) {
-          const parsed = JSON.parse(jsonStr);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setBouts(parsed);
-          }
+        const parsed = JSON.parse(android.getBoutsJson());
+        if (Array.isArray(parsed)) {
+          const active = parsed
+            .filter((bout) => ['LIVE', 'UPCOMING', 'WAITING'].includes(String(bout.status).toUpperCase()))
+            .map((bout) => ({
+              ...bout,
+              id: asId(bout.id),
+              fighterId: asId(bout.fighterId),
+              status: String(bout.status).toUpperCase() === 'LIVE' ? 'LIVE' : 'WAITING',
+              eventName: bout.eventName || 'Fight Event',
+              eventType: bout.eventType || 'Normal Event',
+              tournamentRound: bout.tournamentRound || '',
+              ring: bout.ring || '',
+              weightCategory: bout.weightCategory || '',
+              timestamp: Number(bout.timestamp) || 0,
+            })) as Bout[];
+          setBridgeBouts(active);
         }
-      } catch (e) {
-        console.error("Android bridge load error:", e);
+      } catch (error) {
+        console.error('Android bridge load error:', error);
       }
     }
 
-    // Check Firebase
     const db = initFirebase();
-    if (db) {
-      setIsFirebaseConnected(true);
-      try {
-        const unFighters = onSnapshot(query(collection(db, 'fighters')), (snapshot) => {
-          const fMap: Record<string, any> = {};
-          snapshot.forEach(doc => {
-            fMap[doc.id] = doc.data();
-          });
-          setFightersMap(fMap);
-        });
-
-        const unBouts = onSnapshot(query(collection(db, 'live_fight_cards')), (snapshot) => {
-          const rBouts: any[] = [];
-          snapshot.forEach((doc) => {
-            rBouts.push({ id: doc.id, ...doc.data() });
-          });
-          setRawBouts(rBouts);
-        }, (error) => {
-          console.error("Firestore snapshot error:", error);
-        });
-        return () => { unFighters(); unBouts(); };
-      } catch (e) {
-        console.error("Firebase listener error:", e);
-      }
+    if (!db) {
+      setIsLoading(false);
+      return;
     }
+
+    let fightersReady = false;
+    let cardsReady = false;
+    const markReady = () => {
+      if (fightersReady && cardsReady) {
+        setIsFirebaseConnected(true);
+        setIsLoading(false);
+      }
+    };
+
+    const unsubscribeFighters = onSnapshot(collection(db, 'fighters'), (snapshot) => {
+      const next: Record<string, Fighter> = {};
+      snapshot.forEach((document) => {
+        const data = document.data() as Fighter;
+        const id = asId(data.id) || document.id;
+        next[id] = data;
+        next[document.id] = data;
+      });
+      fightersReady = true;
+      setFighters(next);
+      markReady();
+    }, (error) => {
+      console.error('Fighters listener error:', error);
+      setIsLoading(false);
+    });
+
+    const unsubscribeCards = onSnapshot(collection(db, 'live_fight_cards'), (snapshot) => {
+      setRawCards(snapshot.docs.map((document) => ({
+        docId: document.id,
+        ...(document.data() as LiveFightCard),
+      })));
+      cardsReady = true;
+      markReady();
+    }, (error) => {
+      console.error('Live bouts listener error:', error);
+      setIsLoading(false);
+    });
+
+    return () => {
+      unsubscribeFighters();
+      unsubscribeCards();
+    };
   }, []);
 
-  useEffect(() => {
-    if (!isFirebaseConnected || rawBouts.length === 0) return;
+  const firestoreBouts = useMemo(() => rawCards
+    .map((card) => mapCard(card, card.docId, fighters))
+    .filter((bout): bout is Bout => bout !== null)
+    .sort((a, b) => {
+      const statusOrder = (a.status === 'LIVE' ? 0 : 1) - (b.status === 'LIVE' ? 0 : 1);
+      if (statusOrder !== 0) return statusOrder;
+      return parseBoutNumber(a.boutNumber) - parseBoutNumber(b.boutNumber)
+        || a.boutNumber.localeCompare(b.boutNumber)
+        || a.timestamp - b.timestamp;
+    }), [rawCards, fighters]);
 
-    const mappedBouts: Bout[] = rawBouts.map(data => {
-      const mainFighterId = String(data.fighterId || '');
-      const mainFighter = fightersMap[mainFighterId] || {};
-      
-      const isMainRed = data.corner === 'RED';
-      const isMainBlue = data.corner === 'BLUE';
-
-      // Fallback if corner is not set
-      const redFighterName = isMainRed ? (mainFighter.name || 'Red Fighter') : (data.opponentName || 'Red Fighter');
-      const redFighterGym = isMainRed ? (mainFighter.club || 'GOMO Club') : (data.opponentClub || 'Opponent Club');
-      const redAvatar = isMainRed ? (mainFighter.photoUrl || mainFighter.avatarUrl || '') : '';
-      
-      const blueFighterName = isMainBlue ? (mainFighter.name || 'Blue Fighter') : (data.opponentName || 'Blue Fighter');
-      const blueFighterGym = isMainBlue ? (mainFighter.club || 'GOMO Club') : (data.opponentClub || 'Opponent Club');
-      const blueAvatar = isMainBlue ? (mainFighter.photoUrl || mainFighter.avatarUrl || '') : '';
-
-      return {
-        id: data.id,
-        boutNumber: data.boutNumber || `Bout #${data.id}`,
-        roundName: data.tournamentRound ? `${data.tournamentRound} (${data.weightCategory || ''})` : 'Muaythai Match',
-        status: data.status || 'LIVE',
-        redName: redFighterName,
-        redGym: redFighterGym,
-        redPoints: parseInt(data.r1Score || '0', 10),
-        redAvatar: redAvatar,
-        blueName: blueFighterName,
-        blueGym: blueFighterGym,
-        bluePoints: parseInt(data.r2Score || '0', 10),
-        blueAvatar: blueAvatar,
-        isWinnerRed: (isMainRed && data.result === 'WIN') || (isMainBlue && data.result === 'LOSS'),
-        isWinnerBlue: (isMainBlue && data.result === 'WIN') || (isMainRed && data.result === 'LOSS'),
-      } as Bout;
-    });
-
-    // Check for new winners to trigger confetti
-    mappedBouts.forEach(rb => {
-      const prev = bouts.find(b => b.id === rb.id);
-      if (prev && (!prev.isWinnerRed && !prev.isWinnerBlue) && (rb.isWinnerRed || rb.isWinnerBlue)) {
-        triggerConfetti();
-      }
-    });
-
-    setBouts(mappedBouts);
-  }, [rawBouts, fightersMap, isFirebaseConnected]);
-
-  const triggerConfetti = () => {
-    confetti({
-      particleCount: 120,
-      spread: 80,
-      origin: { y: 0.4 },
-      colors: ['#ef4444', '#f59e0b', '#1e293b', '#3b82f6']
-    });
-  };
-
-  const filteredBouts = bouts.filter(b => filter === 'ALL' || b.status === filter);
-  const activeBoutsCount = bouts.filter(b => b.status === 'LIVE').length;
+  const bouts = isFirebaseConnected ? firestoreBouts : bridgeBouts;
+  const filteredBouts = bouts.filter((bout) => filter === 'ALL' || bout.status === filter);
+  const liveCount = bouts.filter((bout) => bout.status === 'LIVE').length;
+  const waitingCount = bouts.filter((bout) => bout.status === 'WAITING').length;
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-slate-50 text-slate-900 font-sans selection:bg-red-600 selection:text-white">
-      {/* Header */}
-      <Navbar 
-        isFirebaseConnected={isFirebaseConnected}
-      />
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-red-600 selection:text-white">
+      <Navbar isFirebaseConnected={isFirebaseConnected} />
 
-      {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-6 flex-grow w-full">
-        <StatusBanner 
-          activeCount={activeBoutsCount}
+        <StatusBanner
+          liveCount={liveCount}
+          waitingCount={waitingCount}
           isFirebaseConnected={isFirebaseConnected}
         />
+        <FilterTabs currentFilter={filter} onSelectFilter={(value) => setFilter(value as FeedFilter)} />
 
-        <FilterTabs 
-          currentFilter={filter}
-          onSelectFilter={setFilter}
-        />
-
-        {/* Bouts Feed */}
-        <div className="space-y-4">
-          {filteredBouts.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 text-center text-slate-500 text-xs border border-slate-200 shadow-sm">
-              <p className="text-sm font-semibold text-slate-700 mb-1">No active bouts found for "{filter}"</p>
-              <p className="text-slate-500">Fights managed via the GOMO Muaythai app will appear here automatically.</p>
+        <div className="space-y-3" aria-live="polite">
+          {isLoading && bouts.length === 0 ? (
+            <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm">
+              <div className="mx-auto mb-3 h-6 w-6 rounded-full border-2 border-slate-200 border-t-red-600 animate-spin" />
+              <p className="text-sm font-semibold text-slate-700">Loading active fighters…</p>
             </div>
-          ) : (
-            filteredBouts.map(bout => (
-              <BoutCard key={bout.id} bout={bout} />
-            ))
-          )}
+          ) : filteredBouts.length === 0 ? (
+            <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm">
+              <p className="text-sm font-semibold text-slate-700 mb-1">No {filter === 'ALL' ? 'live or waiting' : filter.toLowerCase()} fighters</p>
+              <p className="text-xs text-slate-500">The list updates automatically when a bout changes in the GOMO app.</p>
+            </div>
+          ) : filteredBouts.map((bout) => <BoutCard key={bout.id} bout={bout} />)}
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="bg-white border-t border-slate-200 px-8 py-6 mt-8">
         <div className="max-w-4xl mx-auto text-center text-xs text-slate-500 font-medium">
-          <p>© 2026 GOMO Muaythai Club. Spectator Live Arena & Scoreboard Feed.</p>
+          <p>© 2026 GOMO Muaythai Club. Spectator Live Arena &amp; Scoreboard Feed.</p>
         </div>
       </footer>
-
     </div>
   );
 }

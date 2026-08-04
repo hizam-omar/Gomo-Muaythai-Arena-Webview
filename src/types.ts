@@ -1,25 +1,47 @@
+export type BoutStatus = 'LIVE' | 'WAITING';
+
 export interface Bout {
   id: string;
+  fighterId: string;
   boutNumber: string;
-  roundName: string;
-  status: 'UPCOMING' | 'LIVE' | 'COMPLETED';
+  eventName: string;
+  eventType: string;
+  tournamentRound: string;
+  ring: string;
+  weightCategory: string;
+  status: BoutStatus;
   redName: string;
   redGym: string;
-  redPoints: number;
   redAvatar?: string;
   blueName: string;
   blueGym: string;
-  bluePoints: number;
   blueAvatar?: string;
-  isWinnerRed: boolean;
-  isWinnerBlue: boolean;
-  updatedAt?: any;
+  timestamp: number;
 }
 
-export interface FightEvent {
-  id: string;
-  eventName: string;
-  location: string;
-  date: string;
-  isActive: boolean;
+export interface Fighter {
+  id?: string | number;
+  name?: string;
+  nickname?: string;
+  club?: string;
+  imageUri?: string;
+  photoUrl?: string;
+  avatarUrl?: string;
+}
+
+export interface LiveFightCard {
+  id?: string | number;
+  fighterId?: string | number | null;
+  eventName?: string;
+  eventType?: string;
+  eventStatus?: string;
+  opponentName?: string;
+  opponentClub?: string;
+  weightCategory?: string;
+  boutNumber?: string;
+  tournamentRound?: string;
+  ring?: string;
+  status?: string;
+  corner?: string;
+  timestamp?: number;
 }

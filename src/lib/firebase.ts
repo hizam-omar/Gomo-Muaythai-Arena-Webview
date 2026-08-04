@@ -1,41 +1,38 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getAnalytics } from 'firebase/analytics';
+import { getAnalytics, isSupported } from 'firebase/analytics';
+import { getFirestore, type Firestore } from 'firebase/firestore';
+import bundledConfig from '../../firebase-applet-config.json';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || bundledConfig.apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || bundledConfig.authDomain,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || bundledConfig.projectId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || bundledConfig.storageBucket,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || bundledConfig.messagingSenderId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || bundledConfig.appId,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || bundledConfig.measurementId,
 };
 
-let app: any = null;
-let db: any = null;
+let db: Firestore | null = null;
 
-export function initFirebase() {
+export function initFirebase(): Firestore | null {
+  if (db) return db;
+
   try {
-    if (!firebaseConfig.projectId) {
-      console.warn("Firebase projectId is missing in environment variables.");
-      return null;
-    }
-    if (!getApps().length) {
-      app = initializeApp(firebaseConfig);
-      getAnalytics(app); // Initialize analytics
-    } else {
-      app = getApps()[0];
-    }
-    db = getFirestore(app);
+    if (!firebaseConfig.projectId) return null;
+
+    const app = getApps()[0] || initializeApp(firebaseConfig);
+    const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || bundledConfig.firestoreDatabaseId;
+    db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
+
+    // Analytics is optional and is not supported by every Android WebView.
+    void isSupported().then((supported) => {
+      if (supported && firebaseConfig.measurementId) getAnalytics(app);
+    }).catch(() => undefined);
+
     return db;
-  } catch (e) {
-    console.error("Firebase init error:", e);
+  } catch (error) {
+    console.error('Firebase init error:', error);
     return null;
   }
 }
-
-// Initialize immediately
-db = initFirebase();
-
-export { db };
