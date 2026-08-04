@@ -6,6 +6,7 @@ import { FilterTabs } from './components/FilterTabs';
 import { Navbar } from './components/Navbar';
 import { StatusBanner } from './components/StatusBanner';
 import { VictoryOverlay } from './components/VictoryOverlay';
+import { TournamentStandingsModal } from './components/TournamentStandingsModal';
 import { initFirebase } from './lib/firebase';
 import type { Bout, Fighter, LiveFightCard, RoundScore } from './types';
 
@@ -167,6 +168,7 @@ export default function App() {
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [victoryBout, setVictoryBout] = useState<Bout | null>(null);
+  const [showStandings, setShowStandings] = useState(false);
   const previousBoutStates = useRef<Map<string, string>>(new Map());
 
   useEffect(() => {
@@ -285,6 +287,19 @@ export default function App() {
   const liveCount = bouts.filter((bout) => bout.status === 'LIVE').length;
   const waitingCount = bouts.filter((bout) => bout.status === 'WAITING').length;
   const completedCount = bouts.filter((bout) => bout.status === 'COMPLETED').length;
+  const activeEventName = useMemo(() => {
+    const eventMarker = rawCards.find((card) => !asId(card.fighterId)
+      && (card.eventStatus || '').trim().toUpperCase() !== 'COMPLETED'
+      && card.eventName?.trim());
+    return eventMarker?.eventName?.trim()
+      || bouts.find((bout) => bout.status === 'LIVE')?.eventName
+      || bouts.find((bout) => bout.status === 'WAITING')?.eventName
+      || bouts[0]?.eventName
+      || '';
+  }, [rawCards, bouts]);
+  const activeEventBouts = useMemo(() => bouts.filter((bout) =>
+    activeEventName !== '' && bout.eventName.localeCompare(activeEventName, undefined, { sensitivity: 'accent' }) === 0
+  ), [bouts, activeEventName]);
   const medalCounts = useMemo(() => bouts.reduce((counts, bout) => {
     if (bout.status !== 'COMPLETED') return counts;
     const medal = bout.medal.trim().toUpperCase();
@@ -336,6 +351,7 @@ export default function App() {
           silverCount={medalCounts.silver}
           bronzeCount={medalCounts.bronze}
           isFirebaseConnected={isFirebaseConnected}
+          onOpenStandings={() => setShowStandings(true)}
         />
         <FilterTabs currentFilter={filter} onSelectFilter={(value) => setFilter(value as FeedFilter)} />
 
@@ -360,6 +376,13 @@ export default function App() {
         </div>
       </footer>
       {victoryBout && <VictoryOverlay bout={victoryBout} onDismiss={dismissVictory} />}
+      {showStandings && (
+        <TournamentStandingsModal
+          eventName={activeEventName}
+          bouts={activeEventBouts}
+          onDismiss={() => setShowStandings(false)}
+        />
+      )}
     </div>
   );
 }
