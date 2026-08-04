@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CalendarDays, ChevronDown, MapPin, Trophy } from 'lucide-react';
 
 interface StatusBannerProps {
@@ -65,6 +65,11 @@ export function StatusBanner({
   onSelectMedal,
 }: StatusBannerProps) {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const hasBouts = liveCount + waitingCount + completedCount > 0;
+
+  useEffect(() => {
+    if (!hasBouts) setSummaryExpanded(false);
+  }, [hasBouts]);
 
   return (
     <section className="mb-3 rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:mb-4 sm:p-3">
@@ -97,31 +102,41 @@ export function StatusBanner({
           }`}>
             {isFirebaseConnected ? 'Live Sync' : 'WebView Feed'}
           </span>
-          <button
-            type="button"
-            onClick={onOpenStandings}
-            disabled={!eventName}
-            className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2 py-1 text-[8px] font-extrabold uppercase tracking-wide text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
-          >
-            <Trophy className="h-3 w-3 text-amber-400" /> Standings
-          </button>
+          {hasBouts && (
+            <div className="group relative">
+              <button
+                type="button"
+                onClick={onOpenStandings}
+                aria-label="Open tournament standings"
+                title="Tournament Standings"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-slate-900 text-amber-400 transition hover:bg-red-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+              >
+                <Trophy className="h-3.5 w-3.5" />
+              </button>
+              <span role="tooltip" className="pointer-events-none absolute right-0 top-full z-20 mt-1.5 whitespace-nowrap rounded-md bg-slate-950 px-2 py-1 text-[9px] font-bold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                Tournament Standings
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setSummaryExpanded((expanded) => !expanded)}
-        aria-expanded={summaryExpanded}
-        className="font-combat flex w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wide text-slate-600 transition hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-      >
-        <span>Bout Summary</span>
-        <span className="flex items-center gap-2">
-          <span className="normal-case tracking-normal text-slate-400">{liveCount} live · {waitingCount} waiting · {completedCount} done</span>
-          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${summaryExpanded ? 'rotate-180' : ''}`} />
-        </span>
-      </button>
+      {hasBouts && (
+        <button
+          type="button"
+          onClick={() => setSummaryExpanded((expanded) => !expanded)}
+          aria-expanded={summaryExpanded}
+          className="font-combat flex w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wide text-slate-600 transition hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+        >
+          <span>Bout Summary</span>
+          <span className="flex items-center gap-2">
+            <span className="normal-case tracking-normal text-slate-400">{liveCount} live · {waitingCount} waiting · {completedCount} done</span>
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${summaryExpanded ? 'rotate-180' : ''}`} />
+          </span>
+        </button>
+      )}
 
-      {summaryExpanded && (
+      {hasBouts && summaryExpanded && (
         <div className="mt-2 grid grid-cols-3 gap-1.5 sm:grid-cols-6">
           <MetricBox value={liveCount} label="Live" className="border-red-200 bg-red-50 text-red-700" />
           <MetricBox value={waitingCount} label="Waiting" className="border-slate-200 bg-slate-50 text-slate-700" />
