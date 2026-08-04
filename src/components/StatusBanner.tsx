@@ -1,7 +1,10 @@
-import { Trophy } from 'lucide-react';
+import { CalendarDays, MapPin, Trophy } from 'lucide-react';
 
 interface StatusBannerProps {
   eventName: string;
+  eventLocation: string;
+  eventStartDate: string;
+  eventEndDate: string;
   liveCount: number;
   waitingCount: number;
   completedCount: number;
@@ -46,6 +49,9 @@ function MetricBox({ value, label, className, onClick, selected = false }: Metri
 
 export function StatusBanner({
   eventName,
+  eventLocation,
+  eventStartDate,
+  eventEndDate,
   liveCount,
   waitingCount,
   completedCount,
@@ -60,14 +66,27 @@ export function StatusBanner({
   return (
     <section className="mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-start gap-2">
           <span className="relative flex h-2.5 w-2.5 shrink-0">
             {liveCount > 0 && <span className="absolute h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />}
             <span className={`relative h-2.5 w-2.5 rounded-full ${liveCount > 0 ? 'bg-red-600' : 'bg-slate-400'}`} />
           </span>
-          <h2 className="font-combat text-sm font-black uppercase leading-tight text-slate-900 dark:text-white sm:text-base">
-            Fight Event &amp; Live Bouts{eventName && <span className="text-red-600 dark:text-red-400"> :: {eventName}</span>}
-          </h2>
+          <div className="min-w-0">
+            <h2 className="font-combat text-sm font-black uppercase leading-tight text-slate-900 dark:text-white sm:text-base">
+              Fight Event &amp; Live Bouts{eventName && <span className="text-red-600 dark:text-red-400"> :: {eventName}</span>}
+            </h2>
+            {eventName && (eventLocation || eventStartDate || eventEndDate) && (
+              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-slate-500 dark:text-slate-400 sm:text-xs">
+                {eventLocation && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3 text-red-600" /> {eventLocation}</span>}
+                {(eventStartDate || eventEndDate) && (
+                  <span className="inline-flex items-center gap-1">
+                    <CalendarDays className="h-3 w-3 text-red-600" />
+                    {eventStartDate && eventEndDate ? `${eventStartDate} – ${eventEndDate}` : eventStartDate || eventEndDate}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <span className={`hidden rounded-full px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wide sm:inline ${

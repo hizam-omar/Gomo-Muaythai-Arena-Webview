@@ -11,6 +11,9 @@ export interface Bout {
   fighterId: string;
   boutNumber: string;
   eventName: string;
+  startDate: string;
+  endDate: string;
+  location: string;
   eventType: string;
   tournamentRound: string;
   ring: string;
@@ -48,6 +51,9 @@ export interface LiveFightCard {
   eventName?: string;
   eventType?: string;
   eventStatus?: string;
+  startDate?: string;
+  endDate?: string;
+  location?: string;
   opponentName?: string;
   opponentClub?: string;
   weightCategory?: string;

@@ -218,6 +218,9 @@ function mapCard(data: LiveFightCard, docId: string, fighters: Record<string, Fi
     fighterId,
     boutNumber: data.boutNumber?.trim() || asId(data.id) || docId,
     eventName: data.eventName?.trim() || 'Fight Event',
+    startDate: data.startDate?.trim() || '',
+    endDate: data.endDate?.trim() || '',
+    location: data.location?.trim() || '',
     eventType: data.eventType?.trim() || 'Normal Event',
     tournamentRound: data.tournamentRound?.trim() || '',
     ring: data.ring?.trim() || '',
@@ -283,6 +286,9 @@ export default function App() {
                 : ['COMPLETED', 'FINISHED'].includes(String(bout.status).toUpperCase()) ? 'COMPLETED' : 'WAITING',
               gomoCorner: String(bout.corner).toUpperCase() === 'BLUE' ? 'BLUE' : 'RED',
               eventName: bout.eventName || 'Fight Event',
+              startDate: String(bout.startDate || '').trim(),
+              endDate: String(bout.endDate || '').trim(),
+              location: String(bout.location || '').trim(),
               eventType: bout.eventType || 'Normal Event',
               tournamentRound: bout.tournamentRound || '',
               ring: bout.ring || '',
@@ -402,6 +408,16 @@ export default function App() {
   const bouts = useMemo(() => sourceBouts.filter((bout) => activeEventName !== ''
     && bout.eventName.localeCompare(activeEventName, undefined, { sensitivity: 'accent' }) === 0),
   [sourceBouts, activeEventName]);
+  const activeEventDetails = useMemo(() => {
+    const activeCard = rawCards.find((card) => card.eventName?.trim() === activeEventName
+      && (card.eventStatus || '').trim().toUpperCase() === 'ACTIVE');
+    const activeBout = bouts[0];
+    return {
+      location: activeCard?.location?.trim() || activeBout?.location || '',
+      startDate: activeCard?.startDate?.trim() || activeBout?.startDate || '',
+      endDate: activeCard?.endDate?.trim() || activeBout?.endDate || '',
+    };
+  }, [rawCards, activeEventName, bouts]);
   const normalizedSearch = fighterSearch.trim().toLocaleLowerCase();
   const filteredBouts = bouts.filter((bout) => {
     const matchesStatus = filter === 'ALL' || bout.status === filter;
@@ -475,6 +491,9 @@ export default function App() {
       <main className="max-w-4xl mx-auto px-4 py-6 flex-grow w-full">
         <StatusBanner
           eventName={activeEventName}
+          eventLocation={activeEventDetails.location}
+          eventStartDate={activeEventDetails.startDate}
+          eventEndDate={activeEventDetails.endDate}
           liveCount={liveCount}
           waitingCount={waitingCount}
           completedCount={completedCount}
@@ -489,11 +508,15 @@ export default function App() {
             setFilter('COMPLETED');
           }}
         />
-        <FighterSearch value={fighterSearch} onChange={setFighterSearch} />
-        <FilterTabs currentFilter={filter} onSelectFilter={(value) => {
-          setFilter(value as FeedFilter);
-          setMedalFilter(null);
-        }} />
+        {bouts.length > 0 && (
+          <>
+            <FighterSearch value={fighterSearch} onChange={setFighterSearch} />
+            <FilterTabs currentFilter={filter} onSelectFilter={(value) => {
+              setFilter(value as FeedFilter);
+              setMedalFilter(null);
+            }} />
+          </>
+        )}
 
         <div className="space-y-3" aria-live="polite">
           {isLoading && bouts.length === 0 ? (
