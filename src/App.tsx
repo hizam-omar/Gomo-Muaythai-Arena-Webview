@@ -39,6 +39,74 @@ function playVictorySound() {
   if (context.state === 'suspended') void context.resume();
 
   const now = context.currentTime;
+
+  // Synthesized crowd roar: filtered noise with a natural swell and fade.
+  const cheerDuration = 3.8;
+  const cheerBuffer = context.createBuffer(2, Math.floor(context.sampleRate * cheerDuration), context.sampleRate);
+  for (let channel = 0; channel < cheerBuffer.numberOfChannels; channel += 1) {
+    const samples = cheerBuffer.getChannelData(channel);
+    let smoothed = 0;
+    for (let index = 0; index < samples.length; index += 1) {
+      smoothed = smoothed * 0.86 + (Math.random() * 2 - 1) * 0.14;
+      samples[index] = smoothed;
+    }
+  }
+  const cheerSource = context.createBufferSource();
+  const cheerHighPass = context.createBiquadFilter();
+  const cheerLowPass = context.createBiquadFilter();
+  const cheerGain = context.createGain();
+  cheerSource.buffer = cheerBuffer;
+  cheerHighPass.type = 'highpass';
+  cheerHighPass.frequency.value = 180;
+  cheerLowPass.type = 'lowpass';
+  cheerLowPass.frequency.setValueAtTime(1800, now);
+  cheerLowPass.frequency.exponentialRampToValueAtTime(3800, now + 0.7);
+  cheerLowPass.frequency.exponentialRampToValueAtTime(2200, now + cheerDuration);
+  cheerGain.gain.setValueAtTime(0.0001, now);
+  cheerGain.gain.exponentialRampToValueAtTime(0.38, now + 0.28);
+  cheerGain.gain.setValueAtTime(0.3, now + 1.8);
+  cheerGain.gain.exponentialRampToValueAtTime(0.0001, now + cheerDuration);
+  cheerSource.connect(cheerHighPass).connect(cheerLowPass).connect(cheerGain).connect(context.destination);
+  cheerSource.start(now);
+  cheerSource.stop(now + cheerDuration);
+
+  // Short bursts give the crowd texture similar to clapping.
+  [0.18, 0.34, 0.52, 0.74, 0.98, 1.25, 1.58, 1.92, 2.28].forEach((offset) => {
+    const clapDuration = 0.075;
+    const clapBuffer = context.createBuffer(1, Math.floor(context.sampleRate * clapDuration), context.sampleRate);
+    const samples = clapBuffer.getChannelData(0);
+    for (let index = 0; index < samples.length; index += 1) {
+      samples[index] = (Math.random() * 2 - 1) * Math.pow(1 - index / samples.length, 3);
+    }
+    const clap = context.createBufferSource();
+    const clapFilter = context.createBiquadFilter();
+    const clapGain = context.createGain();
+    clap.buffer = clapBuffer;
+    clapFilter.type = 'bandpass';
+    clapFilter.frequency.value = 1400 + Math.random() * 900;
+    clapFilter.Q.value = 0.8;
+    clapGain.gain.value = 0.24;
+    clap.connect(clapFilter).connect(clapGain).connect(context.destination);
+    clap.start(now + offset);
+  });
+
+  // Two quick whistles sit above the roar without overpowering the chime.
+  [0.45, 1.15].forEach((offset, index) => {
+    const whistle = context.createOscillator();
+    const whistleGain = context.createGain();
+    const start = now + offset;
+    whistle.type = 'sine';
+    whistle.frequency.setValueAtTime(1650 + index * 190, start);
+    whistle.frequency.exponentialRampToValueAtTime(2350 + index * 170, start + 0.45);
+    whistleGain.gain.setValueAtTime(0.0001, start);
+    whistleGain.gain.exponentialRampToValueAtTime(0.035, start + 0.05);
+    whistleGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.52);
+    whistle.connect(whistleGain).connect(context.destination);
+    whistle.start(start);
+    whistle.stop(start + 0.55);
+  });
+
+  // Rising victory chord, matching the notification-like Android cue.
   [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
     const oscillator = context.createOscillator();
     const gain = context.createGain();
