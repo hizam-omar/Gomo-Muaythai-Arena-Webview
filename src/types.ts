@@ -10,12 +10,16 @@ export interface Bout {
   ring: string;
   weightCategory: string;
   status: BoutStatus;
+  gomoCorner: 'RED' | 'BLUE';
   redName: string;
   redGym: string;
   redAvatar?: string;
   blueName: string;
   blueGym: string;
   blueAvatar?: string;
+  result: string;
+  methodOrMedal: string;
+  medal: string;
   timestamp: number;
 }
 
@@ -43,5 +47,8 @@ export interface LiveFightCard {
   ring?: string;
   status?: string;
   corner?: string;
+  result?: string;
+  methodOrMedal?: string;
+  medal?: string;
   timestamp?: number;
 }

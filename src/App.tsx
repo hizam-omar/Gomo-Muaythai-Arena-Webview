@@ -1,13 +1,64 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import confetti from 'canvas-confetti';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { BoutCard } from './components/BoutCard';
 import { FilterTabs } from './components/FilterTabs';
 import { Navbar } from './components/Navbar';
 import { StatusBanner } from './components/StatusBanner';
+import { VictoryOverlay } from './components/VictoryOverlay';
 import { initFirebase } from './lib/firebase';
 import type { Bout, Fighter, LiveFightCard } from './types';
 
 type FeedFilter = 'ALL' | 'LIVE' | 'WAITING' | 'COMPLETED';
+
+let victoryAudioContext: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  try {
+    const AudioContextClass = window.AudioContext
+      || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return null;
+    victoryAudioContext ||= new AudioContextClass();
+    return victoryAudioContext;
+  } catch {
+    return null;
+  }
+}
+
+function unlockVictoryAudio() {
+  const context = getAudioContext();
+  if (context?.state === 'suspended') void context.resume();
+}
+
+function playVictorySound() {
+  const context = getAudioContext();
+  if (!context) return;
+  if (context.state === 'suspended') void context.resume();
+
+  const now = context.currentTime;
+  [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const start = now + index * 0.12;
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(frequency, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.22, start + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.32);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.34);
+  });
+}
+
+function launchVictoryConfetti() {
+  const colors = ['#ffd700', '#2ecc71', '#e74c3c', '#3498db', '#9b59b6', '#e67e22', '#ecf0f1'];
+  confetti({ particleCount: 100, spread: 90, startVelocity: 48, origin: { x: 0.5, y: 0.55 }, colors });
+  window.setTimeout(() => {
+    confetti({ particleCount: 55, angle: 60, spread: 70, origin: { x: 0, y: 0.65 }, colors });
+    confetti({ particleCount: 55, angle: 120, spread: 70, origin: { x: 1, y: 0.65 }, colors });
+  }, 220);
+}
 
 function asId(value: unknown): string {
   return value === null || value === undefined ? '' : String(value);
@@ -60,12 +111,16 @@ function mapCard(data: LiveFightCard, docId: string, fighters: Record<string, Fi
     status: rawStatus === 'LIVE'
       ? 'LIVE'
       : ['COMPLETED', 'FINISHED'].includes(rawStatus) ? 'COMPLETED' : 'WAITING',
+    gomoCorner: isRed ? 'RED' : 'BLUE',
     redName: isRed ? fighterName : opponentName,
     redGym: isRed ? fighterClub : opponentClub,
     redAvatar: isRed ? avatar : undefined,
     blueName: isRed ? opponentName : fighterName,
     blueGym: isRed ? opponentClub : fighterClub,
     blueAvatar: isRed ? undefined : avatar,
+    result: data.result?.trim().toUpperCase() || '',
+    methodOrMedal: data.methodOrMedal?.trim() || '',
+    medal: data.medal?.trim() || '',
     timestamp: Number(data.timestamp) || 0,
   };
 }
@@ -77,10 +132,13 @@ export default function App() {
   const [filter, setFilter] = useState<FeedFilter>('ALL');
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [victoryBout, setVictoryBout] = useState<Bout | null>(null);
+  const previousBoutStates = useRef<Map<string, string>>(new Map());
 
   useEffect(() => {
     const android = (window as Window & { Android?: { getBoutsJson?: () => string } }).Android;
-    if (android?.getBoutsJson) {
+    const refreshAndroidBridge = () => {
+      if (!android?.getBoutsJson) return;
       try {
         const parsed = JSON.parse(android.getBoutsJson());
         if (Array.isArray(parsed)) {
@@ -93,11 +151,15 @@ export default function App() {
               status: String(bout.status).toUpperCase() === 'LIVE'
                 ? 'LIVE'
                 : ['COMPLETED', 'FINISHED'].includes(String(bout.status).toUpperCase()) ? 'COMPLETED' : 'WAITING',
+              gomoCorner: String(bout.corner).toUpperCase() === 'BLUE' ? 'BLUE' : 'RED',
               eventName: bout.eventName || 'Fight Event',
               eventType: bout.eventType || 'Normal Event',
               tournamentRound: bout.tournamentRound || '',
               ring: bout.ring || '',
               weightCategory: bout.weightCategory || '',
+              result: String(bout.result || '').trim().toUpperCase(),
+              methodOrMedal: bout.methodOrMedal || '',
+              medal: bout.medal || '',
               timestamp: Number(bout.timestamp) || 0,
             })) as Bout[];
           setBridgeBouts(active);
@@ -105,12 +167,18 @@ export default function App() {
       } catch (error) {
         console.error('Android bridge load error:', error);
       }
-    }
+    };
+    refreshAndroidBridge();
+    const bridgeRefreshTimer = android?.getBoutsJson
+      ? window.setInterval(refreshAndroidBridge, 1500)
+      : undefined;
 
     const db = initFirebase();
     if (!db) {
       setIsLoading(false);
-      return;
+      return () => {
+        if (bridgeRefreshTimer) window.clearInterval(bridgeRefreshTimer);
+      };
     }
 
     let fightersReady = false;
@@ -151,9 +219,16 @@ export default function App() {
     });
 
     return () => {
+      if (bridgeRefreshTimer) window.clearInterval(bridgeRefreshTimer);
       unsubscribeFighters();
       unsubscribeCards();
     };
+  }, []);
+
+  useEffect(() => {
+    const unlock = () => unlockVictoryAudio();
+    document.addEventListener('pointerdown', unlock, { once: true });
+    return () => document.removeEventListener('pointerdown', unlock);
   }, []);
 
   const firestoreBouts = useMemo(() => rawCards
@@ -173,6 +248,35 @@ export default function App() {
   const liveCount = bouts.filter((bout) => bout.status === 'LIVE').length;
   const waitingCount = bouts.filter((bout) => bout.status === 'WAITING').length;
   const completedCount = bouts.filter((bout) => bout.status === 'COMPLETED').length;
+
+  useEffect(() => {
+    const previous = previousBoutStates.current;
+
+    // Seed the first received snapshot without replaying historical wins.
+    if (previous.size === 0) {
+      bouts.forEach((bout) => previous.set(bout.id, `${bout.status}:${bout.result}`));
+      return;
+    }
+
+    const winner = bouts.find((bout) => {
+      const oldState = previous.get(bout.id);
+      return oldState !== undefined
+        && oldState !== 'COMPLETED:WIN'
+        && bout.status === 'COMPLETED'
+        && bout.result === 'WIN';
+    });
+
+    previous.clear();
+    bouts.forEach((bout) => previous.set(bout.id, `${bout.status}:${bout.result}`));
+
+    if (winner) {
+      setVictoryBout(winner);
+      launchVictoryConfetti();
+      playVictorySound();
+    }
+  }, [bouts]);
+
+  const dismissVictory = useCallback(() => setVictoryBout(null), []);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-red-600 selection:text-white">
@@ -207,6 +311,7 @@ export default function App() {
           <p>© 2026 GOMO Muaythai Club. Spectator Live Arena &amp; Scoreboard Feed.</p>
         </div>
       </footer>
+      {victoryBout && <VictoryOverlay bout={victoryBout} onDismiss={dismissVictory} />}
     </div>
   );
 }
