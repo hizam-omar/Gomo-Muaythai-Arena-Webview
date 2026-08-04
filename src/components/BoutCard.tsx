@@ -16,7 +16,7 @@ function Avatar({ src, name, corner }: { src?: string; name: string; corner: 're
   );
 }
 
-export function BoutCard({ bout }: { bout: Bout }) {
+export function BoutCard({ bout }: { bout: Bout; key?: string }) {
   const isLive = bout.status === 'LIVE';
   const ring = bout.ring ? (bout.ring.toLowerCase().startsWith('ring') ? bout.ring : `Ring ${bout.ring}`) : '';
   const meta = [bout.tournamentRound, ring, bout.weightCategory].filter(Boolean);
