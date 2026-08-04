@@ -71,6 +71,23 @@ function parseBoutNumber(value: string): number {
   return digits ? Number(digits) : Number.MAX_SAFE_INTEGER;
 }
 
+function completedMedalPriority(medal: string): number {
+  const value = medal.trim().toUpperCase();
+  if (value.includes('GOLD')) return 3;
+  if (value.includes('SILVER')) return 2;
+  if (value.includes('BRONZE')) return 1;
+  return 0;
+}
+
+function completedResultPriority(result: string): number {
+  switch (result.trim().toUpperCase()) {
+    case 'WIN': return 0;
+    case 'LOSS': return 1;
+    case 'DRAW': return 2;
+    default: return 3;
+  }
+}
+
 function scoreParts(value?: string): [string, string] | null {
   if (!value?.trim()) return null;
   const parts = value.split(/[-/:,]/).map((part) => part.trim());
@@ -279,6 +296,12 @@ export default function App() {
       const priority = { LIVE: 0, WAITING: 1, COMPLETED: 2 } as const;
       const statusOrder = priority[a.status] - priority[b.status];
       if (statusOrder !== 0) return statusOrder;
+      if (a.status === 'COMPLETED' && b.status === 'COMPLETED') {
+        const medalOrder = completedMedalPriority(b.medal) - completedMedalPriority(a.medal);
+        if (medalOrder !== 0) return medalOrder;
+        const resultOrder = completedResultPriority(a.result) - completedResultPriority(b.result);
+        if (resultOrder !== 0) return resultOrder;
+      }
       return parseBoutNumber(a.boutNumber) - parseBoutNumber(b.boutNumber)
         || a.boutNumber.localeCompare(b.boutNumber)
         || a.timestamp - b.timestamp;

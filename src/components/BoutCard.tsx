@@ -28,22 +28,41 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
   const medal = bout.medal.trim().toUpperCase();
   const hasMedal = isCompleted && medal !== '' && medal !== 'NONE';
   const medalStyle = medal.includes('GOLD')
-    ? 'border-amber-300 bg-amber-50 text-amber-700'
+    ? 'border-amber-500 bg-amber-400 text-amber-950 shadow-sm shadow-amber-300/50'
     : medal.includes('SILVER')
-      ? 'border-slate-300 bg-slate-100 text-slate-700'
-      : 'border-orange-300 bg-orange-50 text-orange-700';
+      ? 'border-slate-400 bg-slate-300 text-slate-900 shadow-sm shadow-slate-300/60'
+      : 'border-orange-500 bg-orange-500 text-white shadow-sm shadow-orange-300/50';
   const hasScores = bout.rounds.length > 0 || bout.redPoints !== '' || bout.bluePoints !== '';
   const result = bout.result.trim().toUpperCase();
   const hasResult = isCompleted && ['WIN', 'LOSS', 'DRAW'].includes(result);
   const resultStyle = result === 'WIN'
-    ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+    ? 'border-emerald-700 bg-emerald-600 text-white shadow-sm shadow-emerald-300/50'
     : result === 'LOSS'
-      ? 'border-red-300 bg-red-50 text-red-700'
-      : 'border-amber-300 bg-amber-50 text-amber-700';
+      ? 'border-rose-700 bg-rose-600 text-white shadow-sm shadow-rose-300/50'
+      : 'border-amber-600 bg-amber-500 text-slate-950 shadow-sm shadow-amber-300/50';
+  const completedCardStyle = medal.includes('GOLD')
+    ? 'border-amber-400 bg-gradient-to-br from-amber-50 via-white to-yellow-100 shadow-amber-200/60'
+    : medal.includes('SILVER')
+      ? 'border-slate-400 bg-gradient-to-br from-slate-100 via-white to-slate-200 shadow-slate-200/70'
+      : medal.includes('BRONZE')
+        ? 'border-orange-400 bg-gradient-to-br from-orange-50 via-white to-orange-100 shadow-orange-200/60'
+        : result === 'WIN'
+          ? 'border-emerald-400 bg-gradient-to-br from-emerald-50 via-white to-emerald-100 shadow-emerald-200/60'
+          : result === 'LOSS'
+            ? 'border-rose-300 bg-gradient-to-br from-rose-50 via-white to-rose-100 shadow-rose-200/50'
+            : 'border-amber-300 bg-gradient-to-br from-amber-50 via-white to-amber-100';
+  const completedHeaderStyle = medal.includes('GOLD')
+    ? 'border-amber-200 bg-amber-100/80'
+    : medal.includes('SILVER')
+      ? 'border-slate-300 bg-slate-200/80'
+      : medal.includes('BRONZE')
+        ? 'border-orange-200 bg-orange-100/80'
+        : result === 'WIN' ? 'border-emerald-200 bg-emerald-100/70'
+          : result === 'LOSS' ? 'border-rose-200 bg-rose-100/70' : 'border-amber-200 bg-amber-100/70';
 
   return (
-    <article className={`overflow-hidden rounded-xl border shadow-sm ${isLive ? 'border-red-500 bg-gradient-to-br from-red-50 via-white to-red-50 ring-2 ring-red-100 shadow-red-200/60' : isCompleted ? 'border-emerald-200 bg-white' : 'border-slate-200 bg-white'}`}>
-      <div className={`flex items-start justify-between gap-3 border-b px-4 py-3 ${isLive ? 'border-red-200 bg-red-100/60' : 'border-slate-100'}`}>
+    <article className={`overflow-hidden rounded-xl border shadow-sm ${isLive ? 'border-red-500 bg-gradient-to-br from-red-50 via-white to-red-50 ring-2 ring-red-100 shadow-red-200/60' : isCompleted ? completedCardStyle : 'border-slate-200 bg-white'}`}>
+      <div className={`flex items-start justify-between gap-3 border-b px-4 py-3 ${isLive ? 'border-red-200 bg-red-100/60' : isCompleted ? completedHeaderStyle : 'border-slate-100'}`}>
         <div className="min-w-0">
           <h2 className="truncate text-sm font-extrabold text-slate-900">{bout.eventName}</h2>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-slate-500">
@@ -59,8 +78,8 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
         </span>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-4 sm:gap-5 sm:px-5">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 px-3 py-3 sm:gap-4 sm:px-5 sm:py-4">
+        <div className="flex min-w-0 items-center gap-2 rounded-xl border border-red-200 bg-red-50/90 p-2 sm:gap-3 sm:p-3">
           <Avatar src={bout.redAvatar} name={bout.redName} corner="red" />
           <div className="min-w-0">
             <p className="text-[10px] font-extrabold tracking-wider text-red-700">RED</p>
@@ -69,12 +88,12 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center justify-center gap-1">
           <span className="text-xs font-black italic text-red-600 sm:text-sm">VS</span>
           {isLive && <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-ping" />}
         </div>
 
-        <div className="flex min-w-0 flex-row-reverse items-center gap-2 text-right sm:gap-3">
+        <div className="flex min-w-0 flex-row-reverse items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/90 p-2 text-right sm:gap-3 sm:p-3">
           <Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" />
           <div className="min-w-0">
             <p className="text-[10px] font-extrabold tracking-wider text-blue-700">BLUE</p>
@@ -132,7 +151,7 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
       )}
 
       {(hasResult || hasMedal) && (
-        <div className="flex flex-wrap justify-center gap-2 border-t border-slate-100 bg-slate-50 px-4 py-2.5">
+        <div className="flex flex-wrap justify-center gap-2 border-t border-white/70 bg-white/65 px-4 py-3 backdrop-blur-sm">
           {hasResult && (
             <span className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1 text-[10px] font-black tracking-wide ${resultStyle}`}>
               <Flag className="h-3.5 w-3.5" /> GOMO {result}
