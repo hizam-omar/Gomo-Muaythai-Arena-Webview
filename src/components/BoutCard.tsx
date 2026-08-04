@@ -1,26 +1,70 @@
-import { useState } from 'react';
-import { CheckCircle2, ChevronDown, Clock3, Flag, ListOrdered, Medal, Radio } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { CheckCircle2, ChevronDown, Clock3, Flag, ListOrdered, Medal, Radio, X } from 'lucide-react';
 import type { Bout } from '../types';
 
-function Avatar({ src, name, corner }: { src?: string; name: string; corner: 'red' | 'blue' }) {
+interface AvatarPreviewData {
+  src?: string;
+  name: string;
+  corner: 'red' | 'blue';
+}
+
+function Avatar({ src, name, corner, onPreview }: AvatarPreviewData & { onPreview: (src?: string) => void }) {
   const [failed, setFailed] = useState(false);
   const border = corner === 'red' ? 'border-red-700' : 'border-blue-700';
   const background = corner === 'red' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700';
   const initial = name.trim().match(/[\p{L}\p{N}]/u)?.[0]?.toUpperCase() || '?';
 
   return (
-    <div className={`h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-full border-2 ${border} ${background} flex items-center justify-center`}>
+    <button
+      type="button"
+      onClick={() => onPreview(src && !failed ? src : undefined)}
+      aria-label={`Open larger avatar for ${name}`}
+      className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 transition hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 sm:h-14 sm:w-14 ${border} ${background} ${corner === 'red' ? 'focus:ring-red-500' : 'focus:ring-blue-500'}`}
+    >
       {src && !failed ? (
         <img src={src} alt={`${name} avatar`} className="h-full w-full object-cover" onError={() => setFailed(true)} />
       ) : (
         <span className="text-xl font-black" aria-label={`${name} initial`}>{initial}</span>
       )}
+    </button>
+  );
+}
+
+function AvatarPreview({ preview, onDismiss }: { preview: AvatarPreviewData; onDismiss: () => void }) {
+  const [failed, setFailed] = useState(false);
+  const initial = preview.name.trim().match(/[\p{L}\p{N}]/u)?.[0]?.toUpperCase() || '?';
+  const isRed = preview.corner === 'red';
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onDismiss();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onDismiss]);
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/80 p-5" role="dialog" aria-modal="true" aria-label={`${preview.name} avatar preview`} onClick={onDismiss}>
+      <div className="relative w-full max-w-sm rounded-3xl bg-white p-5 text-center shadow-2xl" onClick={(event) => event.stopPropagation()}>
+        <button type="button" onClick={onDismiss} aria-label="Close avatar preview" className="absolute right-3 top-3 rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-slate-200 hover:text-slate-900">
+          <X className="h-4 w-4" />
+        </button>
+        <div className={`mx-auto mt-5 flex aspect-square w-full max-w-[280px] items-center justify-center overflow-hidden rounded-full border-4 ${isRed ? 'border-red-600 bg-red-100 text-red-700' : 'border-blue-600 bg-blue-100 text-blue-700'}`}>
+          {preview.src && !failed
+            ? <img src={preview.src} alt={`${preview.name} large avatar`} className="h-full w-full object-cover" onError={() => setFailed(true)} />
+            : <span className="text-8xl font-black">{initial}</span>}
+        </div>
+        <p className={`mt-4 text-[10px] font-black uppercase tracking-[0.18em] ${isRed ? 'text-red-700' : 'text-blue-700'}`}>{isRed ? 'Red Corner' : 'Blue Corner'}</p>
+        <h2 className="mt-1 text-xl font-black text-slate-900">{preview.name}</h2>
+      </div>
     </div>
   );
 }
 
 export function BoutCard({ bout }: { bout: Bout; key?: string }) {
   const [scoresExpanded, setScoresExpanded] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<AvatarPreviewData | null>(null);
   const isLive = bout.status === 'LIVE';
   const isCompleted = bout.status === 'COMPLETED';
   const ring = bout.ring ? (bout.ring.toLowerCase().startsWith('ring') ? bout.ring : `Ring ${bout.ring}`) : '';
@@ -80,7 +124,7 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 px-3 py-3 sm:gap-4 sm:px-5 sm:py-4">
         <div className="flex min-w-0 items-center gap-2 rounded-xl border border-red-200 bg-red-50/90 p-2 sm:gap-3 sm:p-3">
-          <Avatar src={bout.redAvatar} name={bout.redName} corner="red" />
+          <Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={(src) => setAvatarPreview({ src, name: bout.redName, corner: 'red' })} />
           <div className="min-w-0">
             <p className="text-[10px] font-extrabold tracking-wider text-red-700">RED</p>
             <h3 className="truncate text-xs font-extrabold text-slate-900 sm:text-sm">{bout.redName}</h3>
@@ -94,7 +138,7 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
         </div>
 
         <div className="flex min-w-0 flex-row-reverse items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/90 p-2 text-right sm:gap-3 sm:p-3">
-          <Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" />
+          <Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={(src) => setAvatarPreview({ src, name: bout.blueName, corner: 'blue' })} />
           <div className="min-w-0">
             <p className="text-[10px] font-extrabold tracking-wider text-blue-700">BLUE</p>
             <h3 className="truncate text-xs font-extrabold text-slate-900 sm:text-sm">{bout.blueName}</h3>
@@ -163,6 +207,10 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
             </span>
           )}
         </div>
+      )}
+      {avatarPreview && createPortal(
+        <AvatarPreview preview={avatarPreview} onDismiss={() => setAvatarPreview(null)} />,
+        document.body,
       )}
     </article>
   );
