@@ -248,6 +248,14 @@ export default function App() {
   const liveCount = bouts.filter((bout) => bout.status === 'LIVE').length;
   const waitingCount = bouts.filter((bout) => bout.status === 'WAITING').length;
   const completedCount = bouts.filter((bout) => bout.status === 'COMPLETED').length;
+  const medalCounts = useMemo(() => bouts.reduce((counts, bout) => {
+    if (bout.status !== 'COMPLETED') return counts;
+    const medal = bout.medal.trim().toUpperCase();
+    if (medal.includes('GOLD')) counts.gold += 1;
+    else if (medal.includes('SILVER')) counts.silver += 1;
+    else if (medal.includes('BRONZE')) counts.bronze += 1;
+    return counts;
+  }, { gold: 0, silver: 0, bronze: 0 }), [bouts]);
 
   useEffect(() => {
     const previous = previousBoutStates.current;
@@ -287,6 +295,9 @@ export default function App() {
           liveCount={liveCount}
           waitingCount={waitingCount}
           completedCount={completedCount}
+          goldCount={medalCounts.gold}
+          silverCount={medalCounts.silver}
+          bronzeCount={medalCounts.bronze}
           isFirebaseConnected={isFirebaseConnected}
         />
         <FilterTabs currentFilter={filter} onSelectFilter={(value) => setFilter(value as FeedFilter)} />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, Clock3, Radio, UserRound } from 'lucide-react';
+import { CheckCircle2, Clock3, Medal, Radio, UserRound } from 'lucide-react';
 import type { Bout } from '../types';
 
 function Avatar({ src, name, corner }: { src?: string; name: string; corner: 'red' | 'blue' }) {
@@ -21,6 +21,13 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
   const isCompleted = bout.status === 'COMPLETED';
   const ring = bout.ring ? (bout.ring.toLowerCase().startsWith('ring') ? bout.ring : `Ring ${bout.ring}`) : '';
   const meta = [bout.tournamentRound, ring, bout.weightCategory].filter(Boolean);
+  const medal = bout.medal.trim().toUpperCase();
+  const hasMedal = isCompleted && medal !== '' && medal !== 'NONE';
+  const medalStyle = medal.includes('GOLD')
+    ? 'border-amber-300 bg-amber-50 text-amber-700'
+    : medal.includes('SILVER')
+      ? 'border-slate-300 bg-slate-100 text-slate-700'
+      : 'border-orange-300 bg-orange-50 text-orange-700';
 
   return (
     <article className={`overflow-hidden rounded-xl bg-white border shadow-sm ${isLive ? 'border-red-400 ring-1 ring-red-100' : isCompleted ? 'border-emerald-200' : 'border-slate-200'}`}>
@@ -64,6 +71,14 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
           </div>
         </div>
       </div>
+
+      {hasMedal && (
+        <div className="flex justify-center border-t border-slate-100 bg-slate-50 px-4 py-2.5">
+          <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black tracking-wide ${medalStyle}`}>
+            <Medal className="h-3.5 w-3.5" /> {medal} MEDAL
+          </span>
+        </div>
+      )}
     </article>
   );
 }
