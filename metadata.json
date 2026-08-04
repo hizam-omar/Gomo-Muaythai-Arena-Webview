@@ -1,0 +1,7 @@
+{
+  "name": "GOMO Muaythai Live Fight Arena",
+  "description": "Public spectator live scoreboard and upcoming fight events synchronized with GOMO Muaythai Android app via Firebase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
