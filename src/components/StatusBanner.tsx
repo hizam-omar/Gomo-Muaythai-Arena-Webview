@@ -1,4 +1,5 @@
-import { CalendarDays, MapPin, Trophy } from 'lucide-react';
+import { useState } from 'react';
+import { CalendarDays, ChevronDown, MapPin, Trophy } from 'lucide-react';
 
 interface StatusBannerProps {
   eventName: string;
@@ -63,6 +64,8 @@ export function StatusBanner({
   selectedMedal,
   onSelectMedal,
 }: StatusBannerProps) {
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
+
   return (
     <section className="mb-3 rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:mb-4 sm:p-3">
       <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
@@ -98,21 +101,36 @@ export function StatusBanner({
             type="button"
             onClick={onOpenStandings}
             disabled={!eventName}
-            className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-wide text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+            className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2 py-1 text-[8px] font-extrabold uppercase tracking-wide text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
           >
-            <Trophy className="h-3.5 w-3.5 text-amber-400" /> Standings
+            <Trophy className="h-3 w-3 text-amber-400" /> Standings
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6">
-        <MetricBox value={liveCount} label="Live" className="border-red-200 bg-red-50 text-red-700" />
-        <MetricBox value={waitingCount} label="Waiting" className="border-slate-200 bg-slate-50 text-slate-700" />
-        <MetricBox value={completedCount} label="Completed" className="border-emerald-200 bg-emerald-50 text-emerald-700" />
-        <MetricBox value={goldCount} label="🥇 Gold" className="border-amber-300 bg-amber-50 text-amber-700" selected={selectedMedal === 'GOLD'} onClick={() => onSelectMedal('GOLD')} />
-        <MetricBox value={silverCount} label="🥈 Silver" className="border-slate-300 bg-slate-100 text-slate-600" selected={selectedMedal === 'SILVER'} onClick={() => onSelectMedal('SILVER')} />
-        <MetricBox value={bronzeCount} label="🥉 Bronze" className="border-orange-300 bg-orange-50 text-orange-700" selected={selectedMedal === 'BRONZE'} onClick={() => onSelectMedal('BRONZE')} />
-      </div>
+      <button
+        type="button"
+        onClick={() => setSummaryExpanded((expanded) => !expanded)}
+        aria-expanded={summaryExpanded}
+        className="font-combat flex w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wide text-slate-600 transition hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+      >
+        <span>Bout Summary</span>
+        <span className="flex items-center gap-2">
+          <span className="normal-case tracking-normal text-slate-400">{liveCount} live · {waitingCount} waiting · {completedCount} done</span>
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${summaryExpanded ? 'rotate-180' : ''}`} />
+        </span>
+      </button>
+
+      {summaryExpanded && (
+        <div className="mt-2 grid grid-cols-3 gap-1.5 sm:grid-cols-6">
+          <MetricBox value={liveCount} label="Live" className="border-red-200 bg-red-50 text-red-700" />
+          <MetricBox value={waitingCount} label="Waiting" className="border-slate-200 bg-slate-50 text-slate-700" />
+          <MetricBox value={completedCount} label="Completed" className="border-emerald-200 bg-emerald-50 text-emerald-700" />
+          <MetricBox value={goldCount} label="🥇 Gold" className="border-amber-300 bg-amber-50 text-amber-700" selected={selectedMedal === 'GOLD'} onClick={() => onSelectMedal('GOLD')} />
+          <MetricBox value={silverCount} label="🥈 Silver" className="border-slate-300 bg-slate-100 text-slate-600" selected={selectedMedal === 'SILVER'} onClick={() => onSelectMedal('SILVER')} />
+          <MetricBox value={bronzeCount} label="🥉 Bronze" className="border-orange-300 bg-orange-50 text-orange-700" selected={selectedMedal === 'BRONZE'} onClick={() => onSelectMedal('BRONZE')} />
+        </div>
+      )}
     </section>
   );
 }
