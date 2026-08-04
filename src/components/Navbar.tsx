@@ -10,13 +10,13 @@ interface NavbarProps {
 export function Navbar({ isFirebaseConnected, theme, onToggleTheme }: NavbarProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-slate-900">
-      <div className="mx-auto flex max-w-4xl items-center px-4 py-3">
-        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl shadow-md">
+      <div className="mx-auto flex max-w-4xl items-center px-3 py-2.5 sm:px-4 sm:py-3">
+        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg shadow-md sm:h-10 sm:w-10 sm:rounded-xl">
           <img src={logo} alt="GOMO Logo" className="h-full w-full object-cover" />
         </div>
-        <div className="ml-3 min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-combat text-base font-black uppercase leading-tight tracking-wide text-slate-900 dark:text-white sm:text-lg">GOMO Muaythai Arena</h1>
+        <div className="ml-2.5 min-w-0 flex-1 sm:ml-3">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <h1 className="font-combat text-sm font-black uppercase leading-tight tracking-wide text-slate-900 dark:text-white sm:text-lg">GOMO Muaythai Arena</h1>
             <span className={`rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
               isFirebaseConnected
                 ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
@@ -25,7 +25,7 @@ export function Navbar({ isFirebaseConnected, theme, onToggleTheme }: NavbarProp
               {isFirebaseConnected ? 'Firebase Live' : 'Spectator Feed'}
             </span>
           </div>
-          <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">Official Public Live Fighters &amp; Bouts</p>
+          <p className="hidden truncate text-[11px] text-slate-500 dark:text-slate-400 sm:block">Official Public Live Fighters &amp; Bouts</p>
         </div>
         <button
           type="button"

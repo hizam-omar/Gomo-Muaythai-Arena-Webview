@@ -488,7 +488,7 @@ export default function App() {
         onToggleTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
       />
 
-      <main className="max-w-4xl mx-auto px-4 py-6 flex-grow w-full">
+      <main className="mx-auto w-full max-w-4xl flex-grow px-3 py-4 sm:px-4 sm:py-6">
         <StatusBanner
           eventName={activeEventName}
           eventLocation={activeEventDetails.location}
@@ -544,7 +544,7 @@ export default function App() {
         </div>
       </main>
 
-      <footer className="bg-white border-t border-slate-200 px-8 py-6 mt-8 dark:border-slate-800 dark:bg-slate-900">
+      <footer className="mt-6 border-t border-slate-200 bg-white px-4 py-5 dark:border-slate-800 dark:bg-slate-900 sm:mt-8 sm:px-8 sm:py-6">
         <div className="max-w-4xl mx-auto text-center text-xs text-slate-500 font-medium">
           <p>© 2026 GOMO Muaythai Club. Spectator Live Arena &amp; Scoreboard Feed.</p>
         </div>

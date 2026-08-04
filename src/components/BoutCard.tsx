@@ -59,7 +59,7 @@ function Avatar({ src, name, corner, onPreview }: AvatarPreviewData & { onPrevie
       type="button"
       onClick={() => onPreview(src && !failed ? src : undefined)}
       aria-label={`Open larger avatar for ${name}`}
-      className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 transition hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 sm:h-14 sm:w-14 ${border} ${background} ${corner === 'red' ? 'focus:ring-red-500' : 'focus:ring-blue-500'}`}
+      className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 transition hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 sm:h-14 sm:w-14 ${border} ${background} ${corner === 'red' ? 'focus:ring-red-500' : 'focus:ring-blue-500'}`}
     >
       {src && !failed ? (
         <img src={src} alt={`${name} avatar`} className="h-full w-full object-cover" onError={() => setFailed(true)} />
@@ -83,12 +83,12 @@ function AvatarPreview({ preview, onDismiss }: { preview: AvatarPreviewData; onD
   }, [onDismiss]);
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/80 p-5" role="dialog" aria-modal="true" aria-label={`${preview.name} avatar preview`} onClick={onDismiss}>
-      <div className="relative w-full max-w-sm rounded-3xl bg-white p-5 text-center shadow-2xl dark:bg-slate-900" onClick={(event) => event.stopPropagation()}>
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/80 p-3 sm:p-5" role="dialog" aria-modal="true" aria-label={`${preview.name} avatar preview`} onClick={onDismiss}>
+      <div className="relative w-full max-w-sm rounded-2xl bg-white p-4 text-center shadow-2xl dark:bg-slate-900 sm:rounded-3xl sm:p-5" onClick={(event) => event.stopPropagation()}>
         <button type="button" onClick={onDismiss} aria-label="Close avatar preview" className="absolute right-3 top-3 rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-slate-200 hover:text-slate-900">
           <X className="h-4 w-4" />
         </button>
-        <div className={`mx-auto mt-5 flex aspect-square w-full max-w-[280px] items-center justify-center overflow-hidden rounded-full border-4 ${isRed ? 'border-red-600 bg-red-100 text-red-700' : 'border-blue-600 bg-blue-100 text-blue-700'}`}>
+        <div className={`mx-auto mt-5 flex aspect-square w-full max-w-[240px] items-center justify-center overflow-hidden rounded-full border-4 sm:max-w-[280px] ${isRed ? 'border-red-600 bg-red-100 text-red-700' : 'border-blue-600 bg-blue-100 text-blue-700'}`}>
           {preview.src && !failed
             ? <img src={preview.src} alt={`${preview.name} large avatar`} className="h-full w-full object-cover" onError={() => setFailed(true)} />
             : <GeneratedFighterAvatar name={preview.name} corner={preview.corner} />}
@@ -145,14 +145,14 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
 
   return (
     <article className={`overflow-hidden rounded-xl border shadow-sm ${isLive ? 'border-red-500 bg-gradient-to-br from-red-50 via-white to-red-50 ring-2 ring-red-100 shadow-red-200/60 dark:from-red-950 dark:via-slate-900 dark:to-red-950 dark:ring-red-950 dark:shadow-none' : isCompleted ? completedCardStyle : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}>
-      <div className={`flex items-start justify-between gap-3 border-b px-4 py-3 ${isLive ? 'border-red-200 bg-red-100/60' : isCompleted ? completedHeaderStyle : 'border-slate-100'}`}>
+      <div className={`flex items-start justify-between gap-2 border-b px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3 ${isLive ? 'border-red-200 bg-red-100/60' : isCompleted ? completedHeaderStyle : 'border-slate-100'}`}>
         <div className="min-w-0">
-          <h2 className="font-combat truncate text-base font-black uppercase text-slate-900 dark:text-white">Bout #{bout.boutNumber}</h2>
+          <h2 className="font-combat truncate text-sm font-black uppercase text-slate-900 dark:text-white sm:text-base">Bout #{bout.boutNumber}</h2>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-slate-500">
             {(!isCompleted || completedExpanded) && meta.map((item) => <span key={item}>• {item}</span>)}
           </div>
         </div>
-        <span className={`font-combat shrink-0 rounded-md px-2.5 py-1 text-xs font-black tracking-wide text-white ${isLive ? 'bg-red-600' : isCompleted ? 'bg-emerald-600' : 'bg-slate-500'}`}>
+        <span className={`font-combat shrink-0 rounded-md px-2 py-1 text-[10px] font-black tracking-wide text-white sm:px-2.5 sm:text-xs ${isLive ? 'bg-red-600' : isCompleted ? 'bg-emerald-600' : 'bg-slate-500'}`}>
           <span className="flex items-center gap-1.5">
             {isLive ? <Radio className="h-3 w-3 animate-pulse" /> : isCompleted ? <CheckCircle2 className="h-3 w-3" /> : <Clock3 className="h-3 w-3" />}
             {isLive ? 'LIVE NOW' : isCompleted ? 'COMPLETED' : 'WAITING'}
@@ -160,12 +160,12 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
         </span>
       </div>
 
-      <div className={`grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 px-3 sm:gap-4 sm:px-5 ${isCompleted && !completedExpanded ? 'py-2.5' : 'py-3 sm:py-4'}`}>
-        <div className={`flex min-w-0 items-center gap-2 rounded-xl border border-red-200 bg-red-50/90 dark:border-red-900 dark:bg-red-950/60 sm:gap-3 ${isCompleted && !completedExpanded ? 'p-1.5 sm:p-2' : 'p-2 sm:p-3'}`}>
+      <div className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-1.5 px-2 sm:gap-4 sm:px-5 ${isCompleted && !completedExpanded ? 'py-2.5' : 'py-3 sm:py-4'}`}>
+        <div className={`flex min-w-0 items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/90 dark:border-red-900 dark:bg-red-950/60 sm:gap-3 sm:rounded-xl ${isCompleted && !completedExpanded ? 'p-1.5 sm:p-2' : 'p-1.5 sm:p-3'}`}>
           <Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={(src) => setAvatarPreview({ src, name: bout.redName, corner: 'red' })} />
           <div className="min-w-0">
             <p className="text-[10px] font-extrabold tracking-wider text-red-700">RED</p>
-            <h3 className="font-combat truncate text-sm font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.redName}</h3>
+            <h3 className="font-combat truncate text-xs font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.redName}</h3>
             {(!isCompleted || completedExpanded) && <p className="truncate text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">{bout.redGym}</p>}
           </div>
         </div>
@@ -175,11 +175,11 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
           {isLive && <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-ping" />}
         </div>
 
-        <div className={`flex min-w-0 flex-row-reverse items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/90 text-right dark:border-blue-900 dark:bg-blue-950/60 sm:gap-3 ${isCompleted && !completedExpanded ? 'p-1.5 sm:p-2' : 'p-2 sm:p-3'}`}>
+        <div className={`flex min-w-0 flex-row-reverse items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50/90 text-right dark:border-blue-900 dark:bg-blue-950/60 sm:gap-3 sm:rounded-xl ${isCompleted && !completedExpanded ? 'p-1.5 sm:p-2' : 'p-1.5 sm:p-3'}`}>
           <Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={(src) => setAvatarPreview({ src, name: bout.blueName, corner: 'blue' })} />
           <div className="min-w-0">
             <p className="text-[10px] font-extrabold tracking-wider text-blue-700">BLUE</p>
-            <h3 className="font-combat truncate text-sm font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.blueName}</h3>
+            <h3 className="font-combat truncate text-xs font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.blueName}</h3>
             {(!isCompleted || completedExpanded) && <p className="truncate text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">{bout.blueGym}</p>}
           </div>
         </div>
@@ -197,14 +197,14 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
             type="button"
             onClick={() => setScoresExpanded((expanded) => !expanded)}
             aria-expanded={scoresExpanded}
-            className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-slate-50/80 dark:hover:bg-slate-700/60"
+            className="flex w-full items-center justify-between gap-2 px-2.5 py-2.5 text-left hover:bg-slate-50/80 dark:hover:bg-slate-700/60 sm:gap-3 sm:px-3"
           >
             <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-600">
               <ListOrdered className="h-3.5 w-3.5 text-red-600" /> Round Points
             </span>
             <span className="flex items-center gap-2">
               {(bout.redPoints !== '' || bout.bluePoints !== '') && (
-                <span className="rounded-md bg-slate-900 px-2 py-1 text-[10px] font-black text-white">
+                <span className="rounded-md bg-slate-900 px-1.5 py-1 text-[9px] font-black text-white sm:px-2 sm:text-[10px]">
                   Total <span className="text-red-300">{bout.redPoints || '–'}</span>
                   <span className="px-1 text-slate-400">–</span>
                   <span className="text-blue-300">{bout.bluePoints || '–'}</span>
@@ -239,7 +239,7 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
       )}
 
       {(hasResult || hasMedal || isCompleted) && (
-        <div className="flex flex-wrap justify-center gap-2 border-t border-white/70 bg-white/65 px-4 py-3 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/70">
+        <div className="flex flex-wrap justify-center gap-1.5 border-t border-white/70 bg-white/65 px-2 py-2.5 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/70 sm:gap-2 sm:px-4 sm:py-3">
           {hasResult && (
             <span className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1 text-[10px] font-black tracking-wide ${resultStyle}`}>
               <Flag className="h-3.5 w-3.5" /> GOMO {result}

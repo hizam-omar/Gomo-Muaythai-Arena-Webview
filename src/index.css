@@ -4,18 +4,33 @@
 
 :root {
   color-scheme: light;
+  --font-ui: Inter, "Segoe UI Variable", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-combat: "Bahnschrift SemiCondensed", "Arial Narrow", "Roboto Condensed", Roboto, Arial, sans-serif;
 }
 
 :root.dark {
   color-scheme: dark;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: hidden;
   background: #f8fafc;
-  font-family: Inter, "Segoe UI Variable", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-ui);
   font-feature-settings: "kern" 1, "liga" 1;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 .dark body {
@@ -23,7 +38,7 @@ body {
 }
 
 .font-combat {
-  font-family: "Bahnschrift SemiCondensed", "Arial Narrow", "Roboto Condensed", Impact, sans-serif;
+  font-family: var(--font-combat);
   font-stretch: semi-condensed;
   letter-spacing: 0.025em;
 }

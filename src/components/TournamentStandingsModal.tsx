@@ -93,13 +93,13 @@ export function TournamentStandingsModal({
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="Tournament standings" onClick={onDismiss}>
       <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-slate-50 shadow-2xl dark:bg-slate-950" onClick={(event) => event.stopPropagation()}>
-        <header className="flex items-center justify-between gap-3 bg-slate-900 px-4 py-3 text-white sm:px-5">
+        <header className="flex items-center justify-between gap-2 bg-slate-900 px-3 py-3 text-white sm:gap-3 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-400/15">
               <Trophy className="h-5 w-5 text-amber-400" />
             </div>
             <div className="min-w-0">
-              <h2 className="font-combat text-lg font-black uppercase sm:text-xl">Tournament Standings</h2>
+              <h2 className="font-combat text-base font-black uppercase sm:text-xl">Tournament Standings</h2>
               <p className="truncate text-[10px] font-semibold text-slate-300 sm:text-xs">{eventName || 'Current Active Event'}</p>
             </div>
           </div>
@@ -128,8 +128,8 @@ export function TournamentStandingsModal({
                   : rank === 2 ? 'border-slate-300 bg-slate-100 text-slate-500'
                     : rank === 3 ? 'border-orange-300 bg-orange-50 text-orange-700' : 'border-slate-200 bg-slate-50 text-slate-600';
                 return (
-                  <article key={standing.fighterId} className={`flex items-center gap-3 rounded-xl border bg-white p-3 dark:bg-slate-900 ${rank === 1 ? 'border-amber-300 shadow-sm dark:border-amber-700' : 'border-slate-200 dark:border-slate-800'}`}>
-                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-black ${rankStyle}`}>
+                  <article key={standing.fighterId} className={`flex items-center gap-2 rounded-xl border bg-white p-2.5 dark:bg-slate-900 sm:gap-3 sm:p-3 ${rank === 1 ? 'border-amber-300 shadow-sm dark:border-amber-700' : 'border-slate-200 dark:border-slate-800'}`}>
+                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-black sm:h-9 sm:w-9 ${rankStyle}`}>
                       {rank <= 3 ? <Star className="h-4 w-4 fill-current" /> : rank}
                     </div>
                     <StandingAvatar standing={standing} />
