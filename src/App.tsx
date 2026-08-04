@@ -7,6 +7,7 @@ import { Navbar } from './components/Navbar';
 import { StatusBanner } from './components/StatusBanner';
 import { VictoryOverlay } from './components/VictoryOverlay';
 import { TournamentStandingsModal } from './components/TournamentStandingsModal';
+import { FighterSearch } from './components/FighterSearch';
 import { initFirebase } from './lib/firebase';
 import type { Bout, Fighter, LiveFightCard, RoundScore } from './types';
 
@@ -165,6 +166,7 @@ export default function App() {
   const [rawCards, setRawCards] = useState<Array<LiveFightCard & { docId: string }>>([]);
   const [fighters, setFighters] = useState<Record<string, Fighter>>({});
   const [filter, setFilter] = useState<FeedFilter>('ALL');
+  const [fighterSearch, setFighterSearch] = useState('');
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [victoryBout, setVictoryBout] = useState<Bout | null>(null);
@@ -283,7 +285,19 @@ export default function App() {
     }), [rawCards, fighters]);
 
   const bouts = isFirebaseConnected ? firestoreBouts : bridgeBouts;
-  const filteredBouts = bouts.filter((bout) => filter === 'ALL' || bout.status === filter);
+  const normalizedSearch = fighterSearch.trim().toLocaleLowerCase();
+  const filteredBouts = bouts.filter((bout) => {
+    const matchesStatus = filter === 'ALL' || bout.status === filter;
+    const matchesFighter = normalizedSearch === '' || [
+      bout.redName,
+      bout.blueName,
+      bout.redGym,
+      bout.blueGym,
+      bout.eventName,
+      bout.boutNumber,
+    ].some((value) => value.toLocaleLowerCase().includes(normalizedSearch));
+    return matchesStatus && matchesFighter;
+  });
   const liveCount = bouts.filter((bout) => bout.status === 'LIVE').length;
   const waitingCount = bouts.filter((bout) => bout.status === 'WAITING').length;
   const completedCount = bouts.filter((bout) => bout.status === 'COMPLETED').length;
@@ -353,6 +367,7 @@ export default function App() {
           isFirebaseConnected={isFirebaseConnected}
           onOpenStandings={() => setShowStandings(true)}
         />
+        <FighterSearch value={fighterSearch} onChange={setFighterSearch} />
         <FilterTabs currentFilter={filter} onSelectFilter={(value) => setFilter(value as FeedFilter)} />
 
         <div className="space-y-3" aria-live="polite">
@@ -363,8 +378,12 @@ export default function App() {
             </div>
           ) : filteredBouts.length === 0 ? (
             <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm">
-              <p className="text-sm font-semibold text-slate-700 mb-1">No {filter === 'ALL' ? 'bouts for the active event' : `${filter.toLowerCase()} bouts`}</p>
-              <p className="text-xs text-slate-500">The list updates automatically when a bout changes in the GOMO app.</p>
+              <p className="text-sm font-semibold text-slate-700 mb-1">
+                {normalizedSearch ? `No fighter found for “${fighterSearch.trim()}”` : `No ${filter === 'ALL' ? 'bouts for the active event' : `${filter.toLowerCase()} bouts`}`}
+              </p>
+              <p className="text-xs text-slate-500">
+                {normalizedSearch ? 'Try another fighter or opponent name.' : 'The list updates automatically when a bout changes in the GOMO app.'}
+              </p>
             </div>
           ) : filteredBouts.map((bout) => <BoutCard key={bout.id} bout={bout} />)}
         </div>
