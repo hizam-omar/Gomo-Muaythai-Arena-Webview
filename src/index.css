@@ -6,10 +6,33 @@
   color-scheme: light;
   --font-ui: Inter, "Segoe UI Variable", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-combat: "Bahnschrift SemiCondensed", "Arial Narrow", "Roboto Condensed", Roboto, Arial, sans-serif;
+  --breathe-border-start: var(--color-red-300);
+  --breathe-border-mid: var(--color-red-500);
+  --breathe-shadow-start: color-mix(in srgb, var(--color-red-400) 20%, transparent);
+  --breathe-shadow-mid: color-mix(in srgb, var(--color-red-400) 60%, transparent);
 }
 
 :root.dark {
   color-scheme: dark;
+  --breathe-border-start: var(--color-red-900);
+  --breathe-border-mid: var(--color-red-600);
+  --breathe-shadow-start: color-mix(in srgb, var(--color-red-600) 20%, transparent);
+  --breathe-shadow-mid: color-mix(in srgb, var(--color-red-600) 50%, transparent);
+}
+
+@theme {
+  --animate-border-breathe: border-breathe 2.5s ease-in-out infinite;
+  
+  @keyframes border-breathe {
+    0%, 100% { 
+      border-color: var(--breathe-border-start);
+      box-shadow: 0 0 4px 0px var(--breathe-shadow-start);
+    }
+    50% { 
+      border-color: var(--breathe-border-mid);
+      box-shadow: 0 0 12px 2px var(--breathe-shadow-mid);
+    }
+  }
 }
 
 html {

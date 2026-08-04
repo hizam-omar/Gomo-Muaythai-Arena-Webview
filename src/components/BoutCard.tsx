@@ -144,7 +144,7 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
           : result === 'LOSS' ? 'border-rose-200 bg-rose-100/70 dark:border-rose-800 dark:bg-rose-950/80' : 'border-amber-200 bg-amber-100/70 dark:border-amber-800 dark:bg-amber-950/80';
 
   return (
-    <article className={`overflow-hidden rounded-xl border shadow-sm ${isLive ? 'border-red-500 bg-gradient-to-br from-red-50 via-white to-red-50 ring-2 ring-red-100 shadow-red-200/60 dark:from-red-950 dark:via-slate-900 dark:to-red-950 dark:ring-red-950 dark:shadow-none' : isCompleted ? completedCardStyle : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}>
+    <article className={`relative overflow-hidden rounded-xl border shadow-sm ${isLive ? 'animate-border-breathe bg-gradient-to-br from-red-50 via-white to-red-50 dark:from-red-950 dark:via-slate-900 dark:to-red-950' : isCompleted ? completedCardStyle : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}>
       <div className={`flex items-start justify-between gap-2 border-b px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3 ${isLive ? 'border-red-200 bg-red-100/60' : isCompleted ? completedHeaderStyle : 'border-slate-100'}`}>
         <div className="min-w-0">
           <h2 className="font-combat truncate text-sm font-black uppercase text-slate-900 dark:text-white sm:text-base">Bout #{bout.boutNumber}</h2>
