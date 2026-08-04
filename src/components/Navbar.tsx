@@ -2,12 +2,13 @@ import logo from '../assets/images/gomo_logo_1785735883874.jpg';
 import { Moon, Sun } from 'lucide-react';
 
 interface NavbarProps {
+  eventName: string;
   isFirebaseConnected: boolean;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
 }
 
-export function Navbar({ isFirebaseConnected, theme, onToggleTheme }: NavbarProps) {
+export function Navbar({ eventName, isFirebaseConnected, theme, onToggleTheme }: NavbarProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-slate-900">
       <div className="mx-auto flex max-w-4xl items-center px-4 py-3">
@@ -16,7 +17,9 @@ export function Navbar({ isFirebaseConnected, theme, onToggleTheme }: NavbarProp
         </div>
         <div className="ml-3 min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-combat text-lg font-black uppercase tracking-wide text-slate-900 dark:text-white">GOMO Muaythai Arena</h1>
+            <h1 className="font-combat text-base font-black uppercase leading-tight tracking-wide text-slate-900 dark:text-white sm:text-lg">
+              GOMO Muaythai Arena{eventName && <span className="text-red-600 dark:text-red-400"> :: {eventName}</span>}
+            </h1>
             <span className={`rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
               isFirebaseConnected
                 ? 'border-emerald-300 bg-emerald-50 text-emerald-700'

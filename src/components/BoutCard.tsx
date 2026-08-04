@@ -147,9 +147,8 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
     <article className={`overflow-hidden rounded-xl border shadow-sm ${isLive ? 'border-red-500 bg-gradient-to-br from-red-50 via-white to-red-50 ring-2 ring-red-100 shadow-red-200/60 dark:from-red-950 dark:via-slate-900 dark:to-red-950 dark:ring-red-950 dark:shadow-none' : isCompleted ? completedCardStyle : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}>
       <div className={`flex items-start justify-between gap-3 border-b px-4 py-3 ${isLive ? 'border-red-200 bg-red-100/60' : isCompleted ? completedHeaderStyle : 'border-slate-100'}`}>
         <div className="min-w-0">
-          <h2 className="font-combat truncate text-base font-black uppercase text-slate-900 dark:text-white">{bout.eventName}</h2>
+          <h2 className="font-combat truncate text-base font-black uppercase text-slate-900 dark:text-white">Bout #{bout.boutNumber}</h2>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-slate-500">
-            <span className="text-slate-800">Bout #{bout.boutNumber}</span>
             {(!isCompleted || completedExpanded) && meta.map((item) => <span key={item}>• {item}</span>)}
           </div>
         </div>

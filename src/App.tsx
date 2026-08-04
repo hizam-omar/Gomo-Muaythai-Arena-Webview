@@ -382,7 +382,26 @@ export default function App() {
         || a.timestamp - b.timestamp;
     }), [rawCards, fighters]);
 
-  const bouts = isFirebaseConnected ? firestoreBouts : bridgeBouts;
+  const sourceBouts = isFirebaseConnected ? firestoreBouts : bridgeBouts;
+  const activeEventName = useMemo(() => {
+    if (isFirebaseConnected) {
+      const activeEventMarker = rawCards.find((card) => !asId(card.fighterId)
+        && (card.eventStatus || '').trim().toUpperCase() === 'ACTIVE'
+        && card.eventName?.trim());
+      const activeEventBout = rawCards.find((card) => asId(card.fighterId)
+        && (card.eventStatus || '').trim().toUpperCase() === 'ACTIVE'
+        && card.eventName?.trim());
+      return activeEventMarker?.eventName?.trim() || activeEventBout?.eventName?.trim() || '';
+    }
+
+    return bridgeBouts.find((bout) => bout.status === 'LIVE')?.eventName
+      || bridgeBouts.find((bout) => bout.status === 'WAITING')?.eventName
+      || bridgeBouts[0]?.eventName
+      || '';
+  }, [isFirebaseConnected, rawCards, bridgeBouts]);
+  const bouts = useMemo(() => sourceBouts.filter((bout) => activeEventName !== ''
+    && bout.eventName.localeCompare(activeEventName, undefined, { sensitivity: 'accent' }) === 0),
+  [sourceBouts, activeEventName]);
   const normalizedSearch = fighterSearch.trim().toLocaleLowerCase();
   const filteredBouts = bouts.filter((bout) => {
     const matchesStatus = filter === 'ALL' || bout.status === filter;
@@ -400,19 +419,6 @@ export default function App() {
   const liveCount = bouts.filter((bout) => bout.status === 'LIVE').length;
   const waitingCount = bouts.filter((bout) => bout.status === 'WAITING').length;
   const completedCount = bouts.filter((bout) => bout.status === 'COMPLETED').length;
-  const activeEventName = useMemo(() => {
-    const eventMarker = rawCards.find((card) => !asId(card.fighterId)
-      && (card.eventStatus || '').trim().toUpperCase() !== 'COMPLETED'
-      && card.eventName?.trim());
-    return eventMarker?.eventName?.trim()
-      || bouts.find((bout) => bout.status === 'LIVE')?.eventName
-      || bouts.find((bout) => bout.status === 'WAITING')?.eventName
-      || bouts[0]?.eventName
-      || '';
-  }, [rawCards, bouts]);
-  const activeEventBouts = useMemo(() => bouts.filter((bout) =>
-    activeEventName !== '' && bout.eventName.localeCompare(activeEventName, undefined, { sensitivity: 'accent' }) === 0
-  ), [bouts, activeEventName]);
   const medalCounts = useMemo(() => bouts.reduce((counts, bout) => {
     if (bout.status !== 'COMPLETED') return counts;
     const medal = bout.medal.trim().toUpperCase();
@@ -421,6 +427,13 @@ export default function App() {
     else if (medal.includes('BRONZE')) counts.bronze += 1;
     return counts;
   }, { gold: 0, silver: 0, bronze: 0 }), [bouts]);
+
+  useEffect(() => {
+    document.title = activeEventName
+      ? `GOMO Muaythai Arena :: ${activeEventName}`
+      : 'GOMO Muaythai Arena';
+    if (!activeEventName) setShowStandings(false);
+  }, [activeEventName]);
 
   useEffect(() => {
     const previous = previousBoutStates.current;
@@ -454,6 +467,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-red-600 selection:text-white dark:bg-slate-950 dark:text-slate-100">
       <Navbar
+        eventName={activeEventName}
         isFirebaseConnected={isFirebaseConnected}
         theme={theme}
         onToggleTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
@@ -461,6 +475,7 @@ export default function App() {
 
       <main className="max-w-4xl mx-auto px-4 py-6 flex-grow w-full">
         <StatusBanner
+          eventName={activeEventName}
           liveCount={liveCount}
           waitingCount={waitingCount}
           completedCount={completedCount}
@@ -490,13 +505,17 @@ export default function App() {
           ) : filteredBouts.length === 0 ? (
             <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <p className="text-sm font-semibold text-slate-700 mb-1 dark:text-slate-200">
-                {normalizedSearch
-                  ? `No fighter found for “${fighterSearch.trim()}”`
-                  : medalFilter ? `No ${medalFilter.toLowerCase()} medal winners yet`
-                    : `No ${filter === 'ALL' ? 'bouts for the active event' : `${filter.toLowerCase()} bouts`}`}
+                {!activeEventName
+                  ? 'No active event'
+                  : normalizedSearch
+                    ? `No fighter found for “${fighterSearch.trim()}”`
+                    : medalFilter ? `No ${medalFilter.toLowerCase()} medal winners yet`
+                      : `No ${filter === 'ALL' ? 'bouts for the active event' : `${filter.toLowerCase()} bouts`}`}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {normalizedSearch ? 'Try another fighter or opponent name.' : 'The list updates automatically when a bout changes in the GOMO app.'}
+                {!activeEventName
+                  ? 'Bouts and tournament standings will appear when an event status changes to Active.'
+                  : normalizedSearch ? 'Try another fighter or opponent name.' : 'The list updates automatically when a bout changes in the GOMO app.'}
               </p>
             </div>
           ) : filteredBouts.map((bout) => <BoutCard key={bout.id} bout={bout} />)}
@@ -512,7 +531,7 @@ export default function App() {
       {showStandings && (
         <TournamentStandingsModal
           eventName={activeEventName}
-          bouts={activeEventBouts}
+          bouts={bouts}
           onDismiss={() => setShowStandings(false)}
         />
       )}

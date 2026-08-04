@@ -1,6 +1,7 @@
 import { Trophy } from 'lucide-react';
 
 interface StatusBannerProps {
+  eventName: string;
   liveCount: number;
   waitingCount: number;
   completedCount: number;
@@ -44,6 +45,7 @@ function MetricBox({ value, label, className, onClick, selected = false }: Metri
 }
 
 export function StatusBanner({
+  eventName,
   liveCount,
   waitingCount,
   completedCount,
@@ -63,7 +65,9 @@ export function StatusBanner({
             {liveCount > 0 && <span className="absolute h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />}
             <span className={`relative h-2.5 w-2.5 rounded-full ${liveCount > 0 ? 'bg-red-600' : 'bg-slate-400'}`} />
           </span>
-          <h2 className="font-combat truncate text-base font-black uppercase text-slate-900 dark:text-white">Fight Event &amp; Live Bouts</h2>
+          <h2 className="font-combat text-sm font-black uppercase leading-tight text-slate-900 dark:text-white sm:text-base">
+            Fight Event &amp; Live Bouts{eventName && <span className="text-red-600 dark:text-red-400"> :: {eventName}</span>}
+          </h2>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <span className={`hidden rounded-full px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wide sm:inline ${
@@ -71,7 +75,12 @@ export function StatusBanner({
           }`}>
             {isFirebaseConnected ? 'Live Sync' : 'WebView Feed'}
           </span>
-          <button type="button" onClick={onOpenStandings} className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-wide text-white hover:bg-red-700">
+          <button
+            type="button"
+            onClick={onOpenStandings}
+            disabled={!eventName}
+            className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-wide text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+          >
             <Trophy className="h-3.5 w-3.5 text-amber-400" /> Standings
           </button>
         </div>
