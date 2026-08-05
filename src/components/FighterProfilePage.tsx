@@ -234,6 +234,8 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [photoError, setPhotoError] = useState('');
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false);
+  const adminMode = isAdminAuthenticated();
 
   useEffect(() => {
     if (fighter && (!editing || form === null)) setForm(editableValues(fighter));
@@ -244,6 +246,13 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
       ? `${fighter.nickname || fighter.name || 'Fighter'} :: GOMO Muaythai`
       : 'Fighter Profile :: GOMO Muaythai';
   }, [fighter]);
+
+  useEffect(() => {
+    if (!photoPreviewOpen) return;
+    const close = (event: KeyboardEvent) => event.key === 'Escape' && setPhotoPreviewOpen(false);
+    document.addEventListener('keydown', close);
+    return () => document.removeEventListener('keydown', close);
+  }, [photoPreviewOpen]);
 
   const avatar = editing && form ? publicAvatar({ imageUri: form.imageUri }) : fighter ? publicAvatar(fighter) : undefined;
   const initials = (fighter?.nickname || fighter?.name || 'GOMO').split(/\s+/).map((part) => part[0]).join('').slice(0, 2);
@@ -285,7 +294,7 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
   };
 
   const requestEdit = () => {
-    if (isAdminAuthenticated()) {
+    if (adminMode) {
       setForm(editableValues(fighter!));
       setEditing(true);
       return;
@@ -318,17 +327,18 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
         <div className="mx-auto flex max-w-4xl items-center gap-2 px-3 py-2 sm:px-4">
-          <a href="/" aria-label="Back to GOMO Arena" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"><ArrowLeft className="h-5 w-5" /></a>
+          <a href={adminMode ? '/fighters' : '/'} aria-label={adminMode ? 'Back to fighter roster' : 'Back to GOMO Arena'} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"><ArrowLeft className="h-5 w-5" /></a>
           <img src={logo} alt="GOMO Logo" className="h-9 w-9 rounded-xl object-cover" />
-          <div className="min-w-0 flex-1"><p className="font-combat truncate text-sm font-black uppercase">GOMO Fighter Profile</p><p className="text-[10px] font-semibold text-slate-500">Official public fighter information</p></div>
+          <div className="min-w-0 flex-1"><p className="font-combat truncate text-sm font-black uppercase">GOMO Fighter Profile</p><p className={`text-[10px] font-semibold ${adminMode ? 'text-red-600' : 'text-slate-500'}`}>{adminMode ? 'Administrator access · Full information' : 'Official public fighter information'}</p></div>
           <button type="button" onClick={onToggleTheme} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-amber-300 dark:hover:bg-slate-700">{theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}</button>
-          {!editing && <button type="button" data-testid="profile-admin-button" onClick={requestEdit} aria-label="Edit fighter profile" title={isAdminAuthenticated() ? 'Edit profile as admin' : 'Unlock profile editing'} className="grid h-9 w-9 place-items-center rounded-lg bg-red-600 text-white shadow hover:bg-red-700"><ShieldCheck className="h-4 w-4" /></button>}
+          {!editing && <button type="button" data-testid="profile-admin-button" onClick={requestEdit} aria-label="Edit fighter profile" title={adminMode ? 'Edit profile as admin' : 'Unlock profile editing'} className="grid h-9 w-9 place-items-center rounded-lg bg-red-600 text-white shadow hover:bg-red-700">{adminMode ? <Pencil className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}</button>}
         </div>
       </header>
 
       <main className="mx-auto max-w-4xl space-y-4 px-3 py-4 sm:px-4 sm:py-6">
         <section className="relative overflow-hidden rounded-3xl bg-slate-950 p-5 text-white shadow-xl sm:p-7">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(220,38,38,0.42),transparent_45%)]" />
+          {avatar && <button type="button" onClick={() => setPhotoPreviewOpen(true)} aria-label={`Open larger photo of ${form.nickname || form.name}`} className="group absolute left-5 top-5 z-10 h-24 w-24 cursor-zoom-in overflow-hidden rounded-2xl outline-none transition hover:bg-slate-950/10 focus:ring-2 focus:ring-white sm:left-7 sm:top-7 sm:h-32 sm:w-32"><span className="absolute inset-x-0 bottom-0 translate-y-full bg-slate-950/75 py-1 text-[9px] font-black uppercase tracking-wider text-white transition group-hover:translate-y-0 group-focus:translate-y-0">View photo</span></button>}
           <div className="relative flex items-center gap-4 sm:gap-6"><div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-red-500 bg-slate-800 text-2xl font-black sm:h-32 sm:w-32">{avatar ? <img src={avatar} alt={`${form.nickname || form.name} profile`} className="h-full w-full object-cover" /> : initials}</div><div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[0.22em] text-red-400">Kelab Muaythai Gomo</p><h1 className="font-combat mt-1 text-2xl font-black uppercase leading-none sm:text-4xl">{form.nickname || form.name}</h1><p className="mt-2 text-sm font-semibold text-slate-300">{form.name}</p><div className="mt-3 flex flex-wrap gap-2 text-[10px] font-black uppercase"><span className="rounded-full bg-red-600 px-3 py-1">{form.stance}</span><span className="rounded-full bg-white/10 px-3 py-1">{fighterWeightCategory(form.weightKg)}</span><span className="rounded-full bg-white/10 px-3 py-1">{form.wins}W · {form.losses}L · {form.draws}D</span></div></div></div>
         </section>
 
@@ -340,14 +350,16 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
           <ProfileEditor form={form} onText={setText} onNumber={setNumber} onPhoto={uploadPhoto} photoError={photoError} photoBusy={photoBusy} />
         ) : (
           <>
-            <Section eyebrow="Fighter profile" title="Personal & Physical Specs"><Field label="Full Name" value={form.name} editing={false} /><Field label="Nickname" value={form.nickname} editing={false} /><Field label="MyKad / NO KP" value={MASK} editing={false} /><Field label="IFMA License" value={form.ifmaLicense} editing={false} /><Field label="Date of Birth" value={MASK} editing={false} /><Field label="Age" value={form.age} editing={false} /><Field label="Weight" value={`${form.weightKg} kg (${fighterWeightCategory(form.weightKg)})`} editing={false} /><Field label="Height" value={`${form.heightCm} cm`} editing={false} /><Field label="Fighting Stance" value={form.stance} editing={false} /><Field label="Favorite Strike" value={form.favTechnique} editing={false} /><Field label="Fight Record (W/L/D)" value={`${form.wins}W - ${form.losses}L - ${form.draws}D`} editing={false} /><Field label="Record Win Rate" value={`${winRate}%`} editing={false} /></Section>
+            <Section eyebrow="Fighter profile" title="Personal & Physical Specs"><Field label="Full Name" value={form.name} editing={false} /><Field label="Nickname" value={form.nickname} editing={false} /><Field label="MyKad / NO KP" value={adminMode ? form.nokp : MASK} editing={false} /><Field label="IFMA License" value={form.ifmaLicense} editing={false} /><Field label="Date of Birth" value={adminMode ? form.dob : MASK} editing={false} /><Field label="Age" value={form.age} editing={false} /><Field label="Weight" value={`${form.weightKg} kg (${fighterWeightCategory(form.weightKg)})`} editing={false} /><Field label="Height" value={`${form.heightCm} cm`} editing={false} /><Field label="Fighting Stance" value={form.stance} editing={false} /><Field label="Favorite Strike" value={form.favTechnique} editing={false} /><Field label="Fight Record (W/L/D)" value={`${form.wins}W - ${form.losses}L - ${form.draws}D`} editing={false} /><Field label="Record Win Rate" value={`${winRate}%`} editing={false} /></Section>
             <Section eyebrow="Academic info" title="School & Academic Specs"><Field label="School" value={form.school} editing={false} /><Field label="Form / Class" value={form.gradeClass} editing={false} /><Field label="Class Teacher" value={form.classTeacher} editing={false} /><Field label="Senior Assistant (Academic)" value={form.pkTeacher} editing={false} /></Section>
-            <Section eyebrow="Parent / guardian info" title="Parent & Emergency Contact"><Field label="Parent Name" value={form.parentName} editing={false} /><Field label="Parent H/P No." value={MASK} editing={false} /><Field label="Parent Email" value={MASK} editing={false} /></Section>
+            <Section eyebrow="Parent / guardian info" title="Parent & Emergency Contact"><Field label="Parent Name" value={form.parentName} editing={false} /><Field label="Parent H/P No." value={adminMode ? form.parentPhone : MASK} editing={false} /><Field label="Parent Email" value={adminMode ? form.parentEmail : MASK} editing={false} /></Section>
             <Section eyebrow="Official club" title="Club & Management"><Field label="Club" value={form.club} editing={false} /><Field label="Manager" value={form.manager} editing={false} /></Section>
           </>
         )}
         <p className="pb-5 text-center text-[11px] font-semibold text-slate-400">Last updated: {updatedLabel}</p>
       </main>
+
+      {photoPreviewOpen && avatar && <div className="fixed inset-0 z-[170] grid place-items-center bg-slate-950/90 p-4" role="dialog" aria-modal="true" aria-label={`${form.nickname || form.name} photo preview`} onClick={() => setPhotoPreviewOpen(false)}><div className="relative max-h-[92vh] max-w-3xl" onClick={(event) => event.stopPropagation()}><img src={avatar} alt={`${form.nickname || form.name} full-size profile`} className="max-h-[88vh] max-w-full rounded-2xl object-contain shadow-2xl" /><button type="button" onClick={() => setPhotoPreviewOpen(false)} aria-label="Close photo preview" className="absolute right-2 top-2 grid h-10 w-10 place-items-center rounded-full bg-slate-950/75 text-white backdrop-blur hover:bg-slate-950"><X className="h-5 w-5" /></button><p className="absolute inset-x-0 bottom-2 text-center"><span className="rounded-full bg-slate-950/75 px-3 py-1.5 text-xs font-black uppercase text-white backdrop-blur">{form.nickname || form.name}</span></p></div></div>}
 
       {unlockOpen && <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/75 p-4" role="dialog" aria-modal="true" aria-labelledby="unlock-title" onClick={() => setUnlockOpen(false)}><div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-900" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div className="grid h-11 w-11 place-items-center rounded-xl bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"><LockKeyhole className="h-5 w-5" /></div><button type="button" onClick={() => setUnlockOpen(false)} aria-label="Close unlock dialog" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><X className="h-4 w-4" /></button></div><h2 id="unlock-title" className="mt-4 text-xl font-black">Unlock profile editing</h2><p className="mt-1 text-sm text-slate-500">Enter the last 6 digits of this fighter’s MyKad number.</p><label className="mt-4 block text-[11px] font-black uppercase tracking-wide text-slate-500" htmlFor="mykad-pin">Last 6 MyKad digits</label><input id="mykad-pin" data-testid="mykad-pin-input" autoFocus inputMode="numeric" maxLength={6} value={pin} onChange={(event) => { setPin(event.target.value.replace(/\D/g, '').slice(0, 6)); setUnlockError(''); }} onKeyDown={(event) => { if (event.key === 'Enter') unlock(); }} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-center font-mono text-2xl font-black tracking-[0.35em] outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:border-slate-700 dark:bg-slate-950 dark:focus:ring-red-950" placeholder="••••••" />{unlockError && <p role="alert" className="mt-2 text-xs font-bold text-red-600">{unlockError}</p>}<button type="button" data-testid="unlock-profile-button" onClick={unlock} className="mt-4 w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-black text-white hover:bg-red-700">Verify & edit profile</button></div></div>}
     </div>

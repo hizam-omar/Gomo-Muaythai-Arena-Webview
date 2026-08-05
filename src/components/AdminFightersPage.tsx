@@ -9,7 +9,6 @@ import { fighterProfileUrl, fighterWeightCategory } from '../lib/fighter-profile
 import { initFirebase } from '../lib/firebase';
 import type { FightRecord, Fighter, LiveFightCard } from '../types';
 
-type AgeFilter = 'ALL' | 'JUNIOR' | 'YOUTH' | 'STARRED';
 type MedalCounts = { gold: number; silver: number; bronze: number };
 
 function avatarUrl(fighter: Fighter): string | undefined {
@@ -39,7 +38,7 @@ function medalType(value = ''): keyof MedalCounts | null {
 
 function StatCard({ label, value, icon }: { label: string; value: string | number; icon: 'fighters' | 'wins' | 'rate' }) {
   const Icon = icon === 'fighters' ? Users : icon === 'wins' ? Trophy : Medal;
-  return <div className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-4"><Icon className="h-4 w-4 text-red-600" /><p className="mt-2 truncate text-[9px] font-black uppercase tracking-wider text-slate-400 sm:text-[10px]">{label}</p><p className="font-combat mt-0.5 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">{value}</p></div>;
+  return <div className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:min-h-28 sm:p-4"><Icon className="h-4 w-4 text-red-600" /><p className="mt-2 truncate text-[9px] font-black uppercase tracking-wider text-slate-400 sm:text-[10px]">{label}</p><p className="font-combat mt-0.5 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">{value}</p></div>;
 }
 
 function MedalDashboard({ counts, totalFights }: { counts: MedalCounts; totalFights: number }) {
@@ -48,6 +47,14 @@ function MedalDashboard({ counts, totalFights }: { counts: MedalCounts; totalFig
   const silverEnd = total ? goldEnd + (counts.silver / total) * 360 : 0;
   const background = total ? `conic-gradient(#f59e0b 0deg ${goldEnd}deg, #94a3b8 ${goldEnd}deg ${silverEnd}deg, #c2410c ${silverEnd}deg 360deg)` : 'conic-gradient(#e2e8f0 0deg 360deg)';
   return <section className="flex items-center gap-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className="relative grid h-24 w-24 shrink-0 place-items-center rounded-full" style={{ background }}><div className="grid h-16 w-16 place-items-center rounded-full bg-white text-center dark:bg-slate-900"><div><p className="text-xl font-black">{total}</p><p className="text-[8px] font-black uppercase text-slate-400">Medals</p></div></div></div><div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-[0.16em] text-red-600">Club achievement</p><h2 className="font-combat text-lg font-black uppercase">Medal Dashboard</h2><div className="mt-3 flex flex-wrap gap-2 text-[11px] font-black"><span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">🥇 {counts.gold}</span><span className="rounded-full bg-slate-200 px-2.5 py-1 text-slate-700">🥈 {counts.silver}</span><span className="rounded-full bg-orange-100 px-2.5 py-1 text-orange-800">🥉 {counts.bronze}</span></div><p className="mt-2 text-[10px] font-semibold text-slate-400">Across {totalFights} recorded fights</p></div></section>;
+}
+
+function FightRecordDashboard({ wins, losses, draws }: { wins: number; losses: number; draws: number }) {
+  const total = wins + losses + draws;
+  const winEnd = total ? (wins / total) * 360 : 0;
+  const lossEnd = total ? winEnd + (losses / total) * 360 : 0;
+  const background = total ? `conic-gradient(#059669 0deg ${winEnd}deg, #e11d48 ${winEnd}deg ${lossEnd}deg, #f59e0b ${lossEnd}deg 360deg)` : 'conic-gradient(#e2e8f0 0deg 360deg)';
+  return <section className="flex items-center gap-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className="relative grid h-24 w-24 shrink-0 place-items-center rounded-full" style={{ background }}><div className="grid h-16 w-16 place-items-center rounded-full bg-white text-center dark:bg-slate-900"><div><p className="text-xl font-black">{total}</p><p className="text-[8px] font-black uppercase text-slate-400">Fights</p></div></div></div><div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-[0.16em] text-red-600">Fight performance</p><h2 className="font-combat text-lg font-black uppercase">W / L / D Dashboard</h2><div className="mt-3 flex flex-wrap gap-2 text-[11px] font-black"><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-800">W {wins}</span><span className="rounded-full bg-rose-100 px-2.5 py-1 text-rose-800">L {losses}</span><span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">D {draws}</span></div><p className="mt-2 text-[10px] font-semibold text-slate-400">Combined fighter records</p></div></section>;
 }
 
 function FighterRosterCard({ fighter, medals, isLive, expanded, selected, selectionMode, onExpand, onSelect, onStar, onEdit }: {
@@ -132,7 +139,6 @@ export function AdminFightersPage({ fighters, fightRecords, liveCards, isLoading
 }) {
   const [authenticated, setAuthenticated] = useState(isAdminAuthenticated());
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<AgeFilter>('ALL');
   const [expandedId, setExpandedId] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -153,17 +159,18 @@ export function AdminFightersPage({ fighters, fightRecords, liveCards, isLoading
   const liveIds = useMemo(() => new Set(liveCards.filter((card) => card.status?.toUpperCase() === 'LIVE').map((card) => String(card.fighterId))), [liveCards]);
   const normalized = query.trim().toLowerCase();
   const visible = useMemo(() => allFighters.filter((fighter) => {
-    const age = Number(fighter.age || 0);
-    const matchesFilter = filter === 'ALL' || (filter === 'JUNIOR' && age <= 12) || (filter === 'YOUTH' && age >= 13 && age <= 17) || (filter === 'STARRED' && fighter.isStarred);
     const matchesSearch = !normalized || [fighter.name, fighter.nickname, fighter.school, fighter.club, fighterWeightCategory(Number(fighter.weightKg || 0))].some((value) => String(value || '').toLowerCase().includes(normalized));
-    return matchesFilter && matchesSearch;
+    return matchesSearch;
   }).sort((a, b) => {
     const aId = String(a.id || a.firestoreDocId); const bId = String(b.id || b.firestoreDocId);
     const live = Number(liveIds.has(bId)) - Number(liveIds.has(aId)); if (live) return live;
     const aMedals = medalsByFighter.get(aId) || { gold: 0, silver: 0, bronze: 0 }; const bMedals = medalsByFighter.get(bId) || { gold: 0, silver: 0, bronze: 0 };
     return bMedals.gold - aMedals.gold || bMedals.silver - aMedals.silver || bMedals.bronze - aMedals.bronze || Number(b.wins || 0) - Number(a.wins || 0) || Number(Boolean(b.isStarred)) - Number(Boolean(a.isStarred)) || String(a.name).localeCompare(String(b.name));
-  }), [allFighters, filter, normalized, liveIds, medalsByFighter]);
-  const totals = allFighters.reduce((acc, fighter) => ({ wins: acc.wins + Number(fighter.wins || 0), fights: acc.fights + Number(fighter.wins || 0) + Number(fighter.losses || 0) + Number(fighter.draws || 0) }), { wins: 0, fights: 0 });
+  }), [allFighters, normalized, liveIds, medalsByFighter]);
+  const totals = allFighters.reduce((acc, fighter) => {
+    const wins = Number(fighter.wins || 0); const losses = Number(fighter.losses || 0); const draws = Number(fighter.draws || 0);
+    return { wins: acc.wins + wins, losses: acc.losses + losses, draws: acc.draws + draws, fights: acc.fights + wins + losses + draws };
+  }, { wins: 0, losses: 0, draws: 0, fights: 0 });
   const medalTotals = [...medalsByFighter.values()].reduce((acc, counts) => ({ gold: acc.gold + counts.gold, silver: acc.silver + counts.silver, bronze: acc.bronze + counts.bronze }), { gold: 0, silver: 0, bronze: 0 });
 
   const toggleStar = async (fighter: Fighter) => {
@@ -183,10 +190,9 @@ export function AdminFightersPage({ fighters, fightRecords, liveCards, isLoading
       <main className="mx-auto max-w-4xl space-y-3 px-3 py-4 sm:px-4 sm:py-6">
         <button type="button" onClick={() => window.location.reload()} className="flex w-full items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-left text-[11px] font-bold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"><Cloud className="h-4 w-4" /><span className="flex-1">{isConnected ? 'Live cloud database connected' : 'Connecting to cloud database…'}</span><span className="text-[9px] font-black uppercase">Tap to refresh</span><RefreshCw className="h-3.5 w-3.5" /></button>
         <div className="flex gap-2"><StatCard label="Fighters" value={allFighters.length} icon="fighters" /><StatCard label="Total Wins" value={totals.wins} icon="wins" /><StatCard label="Win Rate" value={`${totals.fights ? Math.floor((totals.wins / totals.fights) * 100) : 0}%`} icon="rate" /></div>
-        <MedalDashboard counts={medalTotals} totalFights={totals.fights} />
+        <div className="grid gap-3 md:grid-cols-2"><MedalDashboard counts={medalTotals} totalFights={totals.fights} /><FightRecordDashboard wins={totals.wins} losses={totals.losses} draws={totals.draws} /></div>
         <button type="button" data-testid="add-new-fighter" onClick={() => setEditor('new')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3.5 text-sm font-black text-white shadow-md transition hover:bg-red-700"><UserPlus className="h-4 w-4" /> + Add New Fighter</button>
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className="flex items-center gap-3"><Search className="h-5 w-5 text-red-600" /><div className="min-w-0 flex-1"><p className="text-[9px] font-black uppercase tracking-wider text-red-600">{query ? 'Searching for' : 'Search fighter database'}</p><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Enter name, nickname, school, or weight class…" className="mt-0.5 w-full bg-transparent text-xs font-semibold outline-none placeholder:text-slate-400" /></div>{query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><X className="h-4 w-4 text-slate-400" /></button>}</div></div>
-        <div className="flex gap-2 overflow-x-auto pb-1">{([['ALL', 'All Fighters'], ['JUNIOR', 'Junior (≤12yo)'], ['YOUTH', 'Youth (13–17yo)'], ['STARRED', '⭐ Favorites']] as const).map(([value, label]) => <button type="button" key={value} onClick={() => setFilter(value)} className={`shrink-0 rounded-full border px-3 py-2 text-xs font-bold ${filter === value ? 'border-red-600 bg-red-600 text-white' : 'border-slate-300 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'}`}>{label}</button>)}</div>
         <div className="flex items-center justify-between gap-2"><p className="text-xs font-black uppercase text-slate-500">{visible.length} fighters</p><button type="button" onClick={() => { setSelectionMode((value) => !value); setSelected(new Set()); }} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700"><Download className="h-3.5 w-3.5" />{selectionMode ? 'Cancel selection' : 'Export / Multi-select'}</button></div>
         {isLoading && allFighters.length === 0 ? <div className="grid place-items-center py-16"><div className="h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-red-600" /></div> : visible.length === 0 ? <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900">No fighters found</div> : <div className="space-y-3">{visible.map((fighter) => { const id = fighter.firestoreDocId || String(fighter.id); const recordId = String(fighter.id || id); return <FighterRosterCard key={id} fighter={fighter} medals={medalsByFighter.get(recordId) || { gold: 0, silver: 0, bronze: 0 }} isLive={liveIds.has(recordId)} expanded={expandedId === id} selected={selected.has(id)} selectionMode={selectionMode} onExpand={() => setExpandedId((current) => current === id ? '' : id)} onSelect={() => setSelected((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; })} onStar={() => void toggleStar(fighter)} onEdit={() => setEditor(fighter)} />; })}</div>}
       </main>
