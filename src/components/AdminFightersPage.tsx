@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
-import { ArrowLeft, Check, ChevronDown, Cloud, Download, LogOut, Medal, Moon, Pencil, RefreshCw, Search, Share2, Star, Sun, Trophy, Users, X } from 'lucide-react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useMemo, useState, type ChangeEvent } from 'react';
+import { ArrowLeft, Check, ChevronDown, Cloud, Download, LogOut, Medal, Moon, Pencil, RefreshCw, Save, Search, Share2, Star, Sun, Trophy, UserPlus, Users, X } from 'lucide-react';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import logo from '../assets/images/gomo_logo_1785735883874.jpg';
 import { AdminLoginModal } from './AdminLoginModal';
+import { editableValues, preparePhoto, ProfileEditor, type EditableFighter } from './FighterProfilePage';
 import { endAdminSession, isAdminAuthenticated } from '../lib/admin';
 import { fighterProfileUrl, fighterWeightCategory } from '../lib/fighter-profile';
 import { initFirebase } from '../lib/firebase';
@@ -49,9 +50,9 @@ function MedalDashboard({ counts, totalFights }: { counts: MedalCounts; totalFig
   return <section className="flex items-center gap-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className="relative grid h-24 w-24 shrink-0 place-items-center rounded-full" style={{ background }}><div className="grid h-16 w-16 place-items-center rounded-full bg-white text-center dark:bg-slate-900"><div><p className="text-xl font-black">{total}</p><p className="text-[8px] font-black uppercase text-slate-400">Medals</p></div></div></div><div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-[0.16em] text-red-600">Club achievement</p><h2 className="font-combat text-lg font-black uppercase">Medal Dashboard</h2><div className="mt-3 flex flex-wrap gap-2 text-[11px] font-black"><span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">🥇 {counts.gold}</span><span className="rounded-full bg-slate-200 px-2.5 py-1 text-slate-700">🥈 {counts.silver}</span><span className="rounded-full bg-orange-100 px-2.5 py-1 text-orange-800">🥉 {counts.bronze}</span></div><p className="mt-2 text-[10px] font-semibold text-slate-400">Across {totalFights} recorded fights</p></div></section>;
 }
 
-function FighterRosterCard({ fighter, medals, isLive, expanded, selected, selectionMode, onExpand, onSelect, onStar }: {
+function FighterRosterCard({ fighter, medals, isLive, expanded, selected, selectionMode, onExpand, onSelect, onStar, onEdit }: {
   fighter: Fighter; medals: MedalCounts; isLive: boolean; expanded: boolean; selected: boolean; selectionMode: boolean;
-  onExpand: () => void; onSelect: () => void; onStar: () => void; key?: string;
+  onExpand: () => void; onSelect: () => void; onStar: () => void; onEdit: () => void; key?: string;
 }) {
   const photo = avatarUrl(fighter);
   const name = fighter.nickname || fighter.name || 'GOMO Fighter';
@@ -66,15 +67,62 @@ function FighterRosterCard({ fighter, medals, isLive, expanded, selected, select
   };
   return (
     <article className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm transition dark:bg-slate-900 ${selected ? 'border-red-600 ring-2 ring-red-100 dark:ring-red-950' : 'border-slate-200 dark:border-slate-800'}`}>
-      <div className="flex cursor-pointer items-center gap-3 p-4 pr-12" onClick={selectionMode ? onSelect : () => window.location.assign(profileUrl)}>
+      <div className="flex cursor-pointer items-center gap-3 p-4 pr-20" onClick={selectionMode ? onSelect : () => window.location.assign(profileUrl)}>
         {selectionMode && <span className={`grid h-5 w-5 shrink-0 place-items-center rounded border ${selected ? 'border-red-600 bg-red-600 text-white' : 'border-slate-300'}`}>{selected && <Check className="h-3 w-3" />}</span>}
         <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-red-600 bg-red-100 text-sm font-black text-red-700">{photo ? <img src={photo} alt="" className="h-full w-full object-cover" /> : name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2)}</div>
         <div className="min-w-0 flex-1"><p className="text-[9px] font-black uppercase tracking-wider text-red-600">Kelab Muaythai Gomo</p><div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1.5"><h3 className="font-combat truncate text-base font-black uppercase">{name}</h3>{isLive && <span className="animate-pulse rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-black text-white">● LIVE</span>}<span className="rounded-md bg-red-50 px-1.5 py-0.5 text-[9px] font-black text-red-700 dark:bg-red-950 dark:text-red-300">{fighter.age || 0} yo</span></div><p className="truncate text-xs text-slate-500">{fighter.name || name}</p>{fighter.school && <p className="mt-0.5 truncate text-[10px] font-semibold text-slate-400">🎓 {fighter.school}</p>}<div className="mt-1.5 flex flex-wrap gap-1 text-[9px] font-black">{medals.gold > 0 && <span>🥇{medals.gold}</span>}{medals.silver > 0 && <span>🥈{medals.silver}</span>}{medals.bronze > 0 && <span>🥉{medals.bronze}</span>}</div></div>
       </div>
-      {!selectionMode && <button type="button" onClick={onStar} aria-label="Star fighter" className={`absolute right-3 top-3 rounded-lg p-2 ${fighter.isStarred ? 'text-amber-500' : 'text-slate-300 hover:text-amber-500'}`}><Star className={`h-5 w-5 ${fighter.isStarred ? 'fill-current' : ''}`} /></button>}
+      {!selectionMode && <div className="absolute right-2 top-2 flex items-center"><button type="button" onClick={onEdit} aria-label={`Edit ${name}`} title="Edit fighter" className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 dark:hover:bg-red-950"><Pencil className="h-4 w-4" /></button><button type="button" onClick={onStar} aria-label="Star fighter" className={`rounded-lg p-2 ${fighter.isStarred ? 'text-amber-500' : 'text-slate-300 hover:text-amber-500'}`}><Star className={`h-5 w-5 ${fighter.isStarred ? 'fill-current' : ''}`} /></button></div>}
       {!selectionMode && <button type="button" onClick={onExpand} className="flex w-full items-center justify-center gap-1 border-t border-slate-100 py-2 text-[11px] font-black text-red-600 dark:border-slate-800">{expanded ? 'See less' : 'See more'}<ChevronDown className={`h-4 w-4 transition ${expanded ? 'rotate-180' : ''}`} /></button>}
       {expanded && !selectionMode && <div className="border-t border-slate-100 p-4 dark:border-slate-800"><div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-100 p-3 dark:bg-slate-950"><div className="flex gap-1 text-[10px] font-black text-white"><span className="rounded bg-emerald-600 px-2 py-1">{fighter.wins || 0} W</span><span className="rounded bg-rose-600 px-2 py-1">{fighter.losses || 0} L</span><span className="rounded bg-amber-500 px-2 py-1">{fighter.draws || 0} D</span><span className="px-1 py-1 text-red-600">{winRate}% Win</span></div><span className="text-[11px] font-black">{Number(fighter.weightKg || 0)} kg · {fighter.heightCm || 0} cm</span></div><div className="mt-3 flex flex-wrap items-center gap-2"><button type="button" onClick={share} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><Share2 className="h-4 w-4" /> Share</button><a href={`${profileUrl}?edit=1`} className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-black text-white"><Pencil className="h-3.5 w-3.5" /> Edit profile</a><span className="ml-auto text-[9px] font-semibold text-slate-400">Last Updated: {updated ? new Date(updated).toLocaleString('en-MY') : 'N/A'}</span></div></div>}
     </article>
+  );
+}
+
+function FighterEditorModal({ fighter, onDismiss }: { fighter?: Fighter; onDismiss: () => void }) {
+  const [form, setForm] = useState<EditableFighter>(() => editableValues(fighter || {
+    club: 'KELAB MUAYTHAI GOMO', manager: 'ABBAS ZAKARIA (+60 19-250 1847)',
+    stance: 'Orthodox', favTechnique: 'Knee Strike',
+  }));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [photoError, setPhotoError] = useState('');
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const setText = (key: keyof EditableFighter) => (value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const setNumber = (key: keyof EditableFighter) => (value: string) => setForm((current) => ({ ...current, [key]: Number(value) || 0 }));
+  const uploadPhoto = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]; event.target.value = ''; if (!file) return;
+    setPhotoBusy(true); setPhotoError('');
+    try { const imageUri = await preparePhoto(file); setForm((current) => ({ ...current, imageUri })); }
+    catch (photoIssue) { setPhotoError(photoIssue instanceof Error ? photoIssue.message : 'Unable to prepare this photo.'); }
+    finally { setPhotoBusy(false); }
+  };
+  const save = async () => {
+    if (!form.name.trim() && !form.nickname.trim()) { setError('Enter the fighter name or nickname.'); return; }
+    const db = initFirebase(); if (!db) { setError('Firebase is not connected.'); return; }
+    setSaving(true); setError('');
+    try {
+      const now = Date.now();
+      if (fighter?.firestoreDocId) {
+        await updateDoc(doc(db, 'fighters', fighter.firestoreDocId), { ...form, updatedAt: now });
+      } else {
+        const id = now;
+        await setDoc(doc(db, 'fighters', String(id)), { ...form, id, isStarred: false, createdAt: now, updatedAt: now });
+      }
+      onDismiss();
+    } catch (saveIssue) {
+      console.error('Admin fighter save error:', saveIssue);
+      setError('Unable to save this fighter. Check Firestore permissions.');
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="fixed inset-0 z-[160] overflow-y-auto bg-slate-950/80 p-2 sm:p-5" role="dialog" aria-modal="true" aria-labelledby="fighter-editor-title">
+      <div className="mx-auto min-h-full w-full max-w-3xl rounded-2xl bg-slate-50 shadow-2xl dark:bg-slate-950">
+        <header className="sticky top-0 z-20 flex items-center gap-3 rounded-t-2xl border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95"><div className="grid h-9 w-9 place-items-center rounded-xl bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300">{fighter ? <Pencil className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}</div><div className="min-w-0 flex-1"><h2 id="fighter-editor-title" className="font-combat text-base font-black uppercase">{fighter ? `Edit ${fighter.nickname || fighter.name}` : 'Add New Fighter'}</h2><p className="text-[10px] font-bold text-red-600">GOMO fighter database</p></div><button type="button" onClick={onDismiss} aria-label="Close fighter form" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><X className="h-5 w-5" /></button></header>
+        <div className="space-y-4 p-3 sm:p-5"><ProfileEditor form={form} onText={setText} onNumber={setNumber} onPhoto={uploadPhoto} photoError={photoError} photoBusy={photoBusy} />{error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">{error}</p>}<div className="sticky bottom-3 flex items-center justify-end gap-2 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-900/95"><button type="button" onClick={onDismiss} className="rounded-xl border border-slate-300 px-4 py-3 text-xs font-bold dark:border-slate-700">Cancel</button><button type="button" data-testid="admin-save-fighter" onClick={save} disabled={saving || photoBusy} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-xs font-black text-white disabled:opacity-50"><Save className="h-4 w-4" />{saving ? 'Saving…' : fighter ? 'Save Fighter' : 'Add Fighter'}</button></div></div>
+      </div>
+    </div>
   );
 }
 
@@ -88,6 +136,7 @@ export function AdminFightersPage({ fighters, fightRecords, liveCards, isLoading
   const [expandedId, setExpandedId] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [editor, setEditor] = useState<Fighter | 'new' | null>(null);
 
   const allFighters = useMemo(() => uniqueFighters(fighters), [fighters]);
   const medalsByFighter = useMemo(() => {
@@ -135,12 +184,14 @@ export function AdminFightersPage({ fighters, fightRecords, liveCards, isLoading
         <button type="button" onClick={() => window.location.reload()} className="flex w-full items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-left text-[11px] font-bold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"><Cloud className="h-4 w-4" /><span className="flex-1">{isConnected ? 'Live cloud database connected' : 'Connecting to cloud database…'}</span><span className="text-[9px] font-black uppercase">Tap to refresh</span><RefreshCw className="h-3.5 w-3.5" /></button>
         <div className="flex gap-2"><StatCard label="Fighters" value={allFighters.length} icon="fighters" /><StatCard label="Total Wins" value={totals.wins} icon="wins" /><StatCard label="Win Rate" value={`${totals.fights ? Math.floor((totals.wins / totals.fights) * 100) : 0}%`} icon="rate" /></div>
         <MedalDashboard counts={medalTotals} totalFights={totals.fights} />
+        <button type="button" data-testid="add-new-fighter" onClick={() => setEditor('new')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3.5 text-sm font-black text-white shadow-md transition hover:bg-red-700"><UserPlus className="h-4 w-4" /> + Add New Fighter</button>
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className="flex items-center gap-3"><Search className="h-5 w-5 text-red-600" /><div className="min-w-0 flex-1"><p className="text-[9px] font-black uppercase tracking-wider text-red-600">{query ? 'Searching for' : 'Search fighter database'}</p><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Enter name, nickname, school, or weight class…" className="mt-0.5 w-full bg-transparent text-xs font-semibold outline-none placeholder:text-slate-400" /></div>{query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><X className="h-4 w-4 text-slate-400" /></button>}</div></div>
         <div className="flex gap-2 overflow-x-auto pb-1">{([['ALL', 'All Fighters'], ['JUNIOR', 'Junior (≤12yo)'], ['YOUTH', 'Youth (13–17yo)'], ['STARRED', '⭐ Favorites']] as const).map(([value, label]) => <button type="button" key={value} onClick={() => setFilter(value)} className={`shrink-0 rounded-full border px-3 py-2 text-xs font-bold ${filter === value ? 'border-red-600 bg-red-600 text-white' : 'border-slate-300 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'}`}>{label}</button>)}</div>
         <div className="flex items-center justify-between gap-2"><p className="text-xs font-black uppercase text-slate-500">{visible.length} fighters</p><button type="button" onClick={() => { setSelectionMode((value) => !value); setSelected(new Set()); }} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700"><Download className="h-3.5 w-3.5" />{selectionMode ? 'Cancel selection' : 'Export / Multi-select'}</button></div>
-        {isLoading && allFighters.length === 0 ? <div className="grid place-items-center py-16"><div className="h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-red-600" /></div> : visible.length === 0 ? <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900">No fighters found</div> : <div className="space-y-3">{visible.map((fighter) => { const id = fighter.firestoreDocId || String(fighter.id); const recordId = String(fighter.id || id); return <FighterRosterCard key={id} fighter={fighter} medals={medalsByFighter.get(recordId) || { gold: 0, silver: 0, bronze: 0 }} isLive={liveIds.has(recordId)} expanded={expandedId === id} selected={selected.has(id)} selectionMode={selectionMode} onExpand={() => setExpandedId((current) => current === id ? '' : id)} onSelect={() => setSelected((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; })} onStar={() => void toggleStar(fighter)} />; })}</div>}
+        {isLoading && allFighters.length === 0 ? <div className="grid place-items-center py-16"><div className="h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-red-600" /></div> : visible.length === 0 ? <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900">No fighters found</div> : <div className="space-y-3">{visible.map((fighter) => { const id = fighter.firestoreDocId || String(fighter.id); const recordId = String(fighter.id || id); return <FighterRosterCard key={id} fighter={fighter} medals={medalsByFighter.get(recordId) || { gold: 0, silver: 0, bronze: 0 }} isLive={liveIds.has(recordId)} expanded={expandedId === id} selected={selected.has(id)} selectionMode={selectionMode} onExpand={() => setExpandedId((current) => current === id ? '' : id)} onSelect={() => setSelected((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; })} onStar={() => void toggleStar(fighter)} onEdit={() => setEditor(fighter)} />; })}</div>}
       </main>
       {selectionMode && <div className="fixed inset-x-0 bottom-0 z-40 p-3"><div className="mx-auto flex max-w-4xl items-center gap-3 rounded-2xl border border-red-200 bg-white p-3 shadow-2xl dark:border-red-900 dark:bg-slate-900"><div className="min-w-0 flex-1"><p className="text-xs font-black uppercase text-red-600">{selected.size ? `${selected.size} selected` : 'Export all'}</p><p className="text-[10px] text-slate-400">CSV fighter profiles</p></div><button type="button" onClick={() => setSelected(new Set(visible.map((fighter) => fighter.firestoreDocId || String(fighter.id))))} className="rounded-lg px-3 py-2 text-xs font-bold">Select all</button><button type="button" onClick={exportSelected} className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-3 text-xs font-black text-white"><Download className="h-4 w-4" /> Export ({selected.size || allFighters.length})</button></div></div>}
+      {editor && <FighterEditorModal fighter={editor === 'new' ? undefined : editor} onDismiss={() => setEditor(null)} />}
     </div>
   );
 }

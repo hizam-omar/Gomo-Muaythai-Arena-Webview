@@ -14,7 +14,7 @@ interface FighterProfilePageProps {
   onToggleTheme: () => void;
 }
 
-type EditableFighter = Required<Pick<Fighter,
+export type EditableFighter = Required<Pick<Fighter,
   'name' | 'nickname' | 'nokp' | 'dob' | 'age' | 'weightKg' | 'heightCm' |
   'wins' | 'losses' | 'draws' | 'club' | 'manager' | 'school' | 'gradeClass' |
   'classTeacher' | 'pkTeacher' | 'parentName' | 'parentPhone' | 'parentEmail' |
@@ -22,7 +22,7 @@ type EditableFighter = Required<Pick<Fighter,
 
 const MASK = '********';
 
-function editableValues(fighter: Fighter): EditableFighter {
+export function editableValues(fighter: Fighter): EditableFighter {
   return {
     name: fighter.name || '', nickname: fighter.nickname || '', nokp: fighter.nokp || '',
     dob: fighter.dob || '', age: Number(fighter.age) || 0, weightKg: Number(fighter.weightKg) || 0,
@@ -37,7 +37,7 @@ function editableValues(fighter: Fighter): EditableFighter {
   };
 }
 
-async function preparePhoto(file: File): Promise<string> {
+export async function preparePhoto(file: File): Promise<string> {
   if (!file.type.startsWith('image/')) throw new Error('Choose an image file.');
   if (file.size > 12 * 1024 * 1024) throw new Error('Photo must be smaller than 12 MB.');
 
@@ -166,7 +166,7 @@ function ChipGroup({ label, values, selected, onSelect }: { label: string; value
   );
 }
 
-function ProfileEditor({ form, onText, onNumber, onPhoto, photoError, photoBusy }: {
+export function ProfileEditor({ form, onText, onNumber, onPhoto, photoError, photoBusy }: {
   form: EditableFighter;
   onText: (key: keyof EditableFighter) => (value: string) => void;
   onNumber: (key: keyof EditableFighter) => (value: string) => void;
