@@ -1,5 +1,5 @@
 import { useMemo, useState, type ChangeEvent } from 'react';
-import { ArrowLeft, Check, Cloud, Download, Link2, LogOut, Medal, Moon, Pencil, RefreshCw, Save, Search, Star, Sun, Trash2, Trophy, UserPlus, Users, X } from 'lucide-react';
+import { ArrowLeft, Check, Cloud, Copy, Download, ExternalLink, Link2, LogOut, Medal, MessageCircle, Moon, Pencil, RefreshCw, Save, Search, Star, Sun, Trash2, Trophy, UserPlus, Users, X } from 'lucide-react';
 import { deleteDoc, doc, setDoc, updateDoc } from 'firebase/firestore';
 import logo from '../assets/images/gomo_logo_1785735883874.jpg';
 import { AdminLoginModal } from './AdminLoginModal';
@@ -61,6 +61,7 @@ function FighterRosterCard({ fighter, medals, isLive, selected, selectionMode, o
   fighter: Fighter; medals: MedalCounts; isLive: boolean; selected: boolean; selectionMode: boolean;
   onSelect: () => void; onStar: () => void; onDelete: () => void; key?: string;
 }) {
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const photo = avatarUrl(fighter);
   const name = fighter.nickname || fighter.name || 'GOMO Fighter';
   const fullName = fighter.name || name;
@@ -69,6 +70,16 @@ function FighterRosterCard({ fighter, medals, isLive, selected, selectionMode, o
   const winRate = fights ? Math.floor((Number(fighter.wins || 0) / fights) * 100) : 0;
   const profileUrl = fighterProfileUrl(fighter);
   const publicProfileUrl = fighterPublicProfileUrl(fighter);
+  const whatsappMessage = `GOMO Fighter Profile\n${fullName} (#${nicknameTag})\n${publicProfileUrl}\n\nOpen the link to view or update the fighter information.`;
+  const copyForWhatsApp = async () => {
+    try {
+      await navigator.clipboard.writeText(whatsappMessage);
+      setCopyState('copied');
+      window.setTimeout(() => setCopyState('idle'), 2000);
+    } catch {
+      setCopyState('error');
+    }
+  };
   return (
     <article className={`relative overflow-hidden rounded-xl border bg-white shadow-sm transition dark:bg-slate-900 ${selected ? 'border-red-600 ring-2 ring-red-100 dark:ring-red-950' : 'border-slate-200 dark:border-slate-800'}`}>
       <div className="flex items-center gap-2.5 p-2.5 pr-24 cursor-pointer" onClick={selectionMode ? onSelect : () => window.location.assign(profileUrl)}>
@@ -81,7 +92,11 @@ function FighterRosterCard({ fighter, medals, isLive, selected, selectionMode, o
             <span className="rounded bg-red-50 px-1.5 py-0.5 text-[9px] font-black text-red-700 dark:bg-red-950 dark:text-red-300">{fighter.age || 0}yo</span>
           </div>
           <p className="truncate text-[11px] text-slate-500">{fighter.name || name} {fighter.school ? `· 🎓 ${fighter.school}` : ''}</p>
-          <a href={publicProfileUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} className="mt-0.5 block truncate text-[9px] font-semibold text-blue-600 hover:underline" title={publicProfileUrl}>{publicProfileUrl}</a>
+          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
+            <a href={publicProfileUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-[9px] font-bold text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300" title={`Open ${publicProfileUrl}`}><ExternalLink className="h-3 w-3 shrink-0" /><span className="truncate">{publicProfileUrl}</span></a>
+            <button type="button" onClick={(event) => { event.stopPropagation(); void copyForWhatsApp(); }} className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-black ${copyState === 'copied' ? 'bg-emerald-100 text-emerald-700' : copyState === 'error' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200'}`} title="Copy fighter name and link for WhatsApp"><Copy className="h-3 w-3" />{copyState === 'copied' ? 'Copied!' : copyState === 'error' ? 'Copy failed' : 'Copy for WhatsApp'}</button>
+            <a href={`https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[9px] font-black text-white hover:bg-emerald-700" title="Share fighter profile through WhatsApp"><MessageCircle className="h-3 w-3" />WhatsApp</a>
+          </div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] font-black">
             <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-white">{fighter.wins || 0}W</span>
             <span className="rounded bg-rose-600 px-1.5 py-0.5 text-white">{fighter.losses || 0}L</span>
