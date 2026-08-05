@@ -2,12 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { BoutCard } from './components/BoutCard';
-import { FilterTabs } from './components/FilterTabs';
 import { Navbar } from './components/Navbar';
 import { StatusBanner } from './components/StatusBanner';
 import { VictoryOverlay } from './components/VictoryOverlay';
 import { TournamentStandingsModal } from './components/TournamentStandingsModal';
-import { FighterSearch } from './components/FighterSearch';
 import { initFirebase } from './lib/firebase';
 import type { Bout, Fighter, LiveFightCard, RoundScore } from './types';
 
@@ -186,7 +184,32 @@ function usableAvatar(fighter: Fighter): string | undefined {
   return avatar;
 }
 
-function mapCard(data: LiveFightCard, docId: string, fighters: Record<string, Fighter>): Bout | null {
+function computeCalculatedStreaks(cards: LiveFightCard[]): Map<string, number> {
+  const map = new Map<string, number>();
+  const completed = cards
+    .filter((c) => ['COMPLETED', 'FINISHED'].includes((c.status || '').toUpperCase()))
+    .sort((a, b) => (Number(b.completedAt) || Number(b.timestamp) || 0) - (Number(a.completedAt) || Number(a.timestamp) || 0));
+
+  for (const card of completed) {
+    const fid = asId(card.fighterId);
+    if (!fid) continue;
+    if (map.get(fid) === -1) continue;
+    const res = (card.result || '').toUpperCase();
+    if (res === 'WIN') {
+      map.set(fid, (map.get(fid) || 0) + 1);
+    } else if (res === 'LOSS' || res === 'DRAW') {
+      if (!map.has(fid)) map.set(fid, -1);
+    }
+  }
+  return map;
+}
+
+function mapCard(
+  data: LiveFightCard,
+  docId: string,
+  fighters: Record<string, Fighter>,
+  calculatedStreaks?: Map<string, number>
+): Bout | null {
   const fighterId = asId(data.fighterId);
   const rawStatus = (data.status || '').trim().toUpperCase();
 
@@ -212,6 +235,24 @@ function mapCard(data: LiveFightCard, docId: string, fighters: Record<string, Fi
   const bluePoints = totalParts
     ? (isRed ? totalParts[1] : totalParts[0])
     : rounds.length > 0 ? String(calculatedBlueTotal) : '';
+
+  const fighterCalcStreak = calculatedStreaks?.get(fighterId);
+  const fighterExplicitStreak = fighter.winStreak ?? fighter.streak ?? (fighterCalcStreak && fighterCalcStreak > 0 ? fighterCalcStreak : undefined);
+
+  const opponentFighter = Object.values(fighters).find((f) => {
+    const fname = (f.nickname || f.name || '').trim().toLowerCase();
+    return fname && fname === opponentName.toLowerCase();
+  });
+  const oppCalcStreak = opponentFighter?.id ? calculatedStreaks?.get(asId(opponentFighter.id)) : undefined;
+  const opponentExplicitStreak = opponentFighter
+    ? (opponentFighter.winStreak ?? opponentFighter.streak ?? (oppCalcStreak && oppCalcStreak > 0 ? oppCalcStreak : undefined))
+    : undefined;
+
+  const rawRedStreak = data.redWinStreak ?? (isRed ? (data.winStreak ?? data.streak ?? fighterExplicitStreak) : opponentExplicitStreak);
+  const rawBlueStreak = data.blueWinStreak ?? (!isRed ? (data.winStreak ?? data.streak ?? fighterExplicitStreak) : opponentExplicitStreak);
+
+  const redWinStreak = typeof rawRedStreak === 'number' && rawRedStreak > 0 ? rawRedStreak : undefined;
+  const blueWinStreak = typeof rawBlueStreak === 'number' && rawBlueStreak > 0 ? rawBlueStreak : undefined;
 
   return {
     id: asId(data.id) || docId,
@@ -241,6 +282,8 @@ function mapCard(data: LiveFightCard, docId: string, fighters: Record<string, Fi
     rounds,
     redPoints,
     bluePoints,
+    redWinStreak,
+    blueWinStreak,
     timestamp: Number(data.completedAt) || Number(data.timestamp) || 0,
   };
 }
@@ -370,23 +413,26 @@ export default function App() {
     return () => document.removeEventListener('pointerdown', unlock);
   }, []);
 
-  const firestoreBouts = useMemo(() => rawCards
-    .map((card) => mapCard(card, card.docId, fighters))
-    .filter((bout): bout is Bout => bout !== null)
-    .sort((a, b) => {
-      const priority = { LIVE: 0, WAITING: 1, COMPLETED: 2 } as const;
-      const statusOrder = priority[a.status] - priority[b.status];
-      if (statusOrder !== 0) return statusOrder;
-      if (a.status === 'COMPLETED' && b.status === 'COMPLETED') {
-        const categoryOrder = completedCategoryPriority(a.medal, a.result) - completedCategoryPriority(b.medal, b.result);
-        if (categoryOrder !== 0) return categoryOrder;
-        const latestOrder = b.timestamp - a.timestamp;
-        if (latestOrder !== 0) return latestOrder;
-      }
-      return parseBoutNumber(a.boutNumber) - parseBoutNumber(b.boutNumber)
-        || a.boutNumber.localeCompare(b.boutNumber)
-        || a.timestamp - b.timestamp;
-    }), [rawCards, fighters]);
+  const firestoreBouts = useMemo(() => {
+    const streaks = computeCalculatedStreaks(rawCards);
+    return rawCards
+      .map((card) => mapCard(card, card.docId, fighters, streaks))
+      .filter((bout): bout is Bout => bout !== null)
+      .sort((a, b) => {
+        const priority = { LIVE: 0, WAITING: 1, COMPLETED: 2 } as const;
+        const statusOrder = priority[a.status] - priority[b.status];
+        if (statusOrder !== 0) return statusOrder;
+        if (a.status === 'COMPLETED' && b.status === 'COMPLETED') {
+          const categoryOrder = completedCategoryPriority(a.medal, a.result) - completedCategoryPriority(b.medal, b.result);
+          if (categoryOrder !== 0) return categoryOrder;
+          const latestOrder = b.timestamp - a.timestamp;
+          if (latestOrder !== 0) return latestOrder;
+        }
+        return parseBoutNumber(a.boutNumber) - parseBoutNumber(b.boutNumber)
+          || a.boutNumber.localeCompare(b.boutNumber)
+          || a.timestamp - b.timestamp;
+      });
+  }, [rawCards, fighters]);
 
   const sourceBouts = isFirebaseConnected ? firestoreBouts : bridgeBouts;
   const activeEventName = useMemo(() => {
@@ -483,12 +529,11 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-red-600 selection:text-white dark:bg-slate-950 dark:text-slate-100">
       <Navbar
-        isFirebaseConnected={isFirebaseConnected}
         theme={theme}
         onToggleTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
       />
 
-      <main className="mx-auto w-full max-w-4xl flex-grow px-3 py-4 sm:px-4 sm:py-6">
+      <main className="mx-auto w-full max-w-4xl flex-grow px-2 py-2.5 sm:px-4 sm:py-6">
         <StatusBanner
           eventName={activeEventName}
           eventLocation={activeEventDetails.location}
@@ -502,23 +547,19 @@ export default function App() {
           bronzeCount={medalCounts.bronze}
           isFirebaseConnected={isFirebaseConnected}
           onOpenStandings={() => setShowStandings(true)}
+          currentFilter={filter}
+          onSelectFilter={(value) => {
+            setFilter(value);
+            setMedalFilter(null);
+          }}
           selectedMedal={medalFilter}
           onSelectMedal={(medal) => {
             setMedalFilter((current) => current === medal ? null : medal);
             setFilter('COMPLETED');
           }}
         />
-        {bouts.length > 0 && (
-          <>
-            <FighterSearch value={fighterSearch} onChange={setFighterSearch} />
-            <FilterTabs currentFilter={filter} onSelectFilter={(value) => {
-              setFilter(value as FeedFilter);
-              setMedalFilter(null);
-            }} />
-          </>
-        )}
 
-        <div className="space-y-3" aria-live="polite">
+        <div className="space-y-2 sm:space-y-3" aria-live="polite">
           {isLoading && bouts.length === 0 ? (
             <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mx-auto mb-3 h-6 w-6 rounded-full border-2 border-slate-200 border-t-red-600 animate-spin" />

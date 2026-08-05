@@ -32,6 +32,8 @@ export interface Bout {
   rounds: RoundScore[];
   redPoints: string;
   bluePoints: string;
+  redWinStreak?: number;
+  blueWinStreak?: number;
   timestamp: number;
 }
 
@@ -43,6 +45,11 @@ export interface Fighter {
   imageUri?: string;
   photoUrl?: string;
   avatarUrl?: string;
+  winStreak?: number;
+  streak?: number;
+  wins?: number;
+  losses?: number;
+  draws?: number;
 }
 
 export interface LiveFightCard {
@@ -74,6 +81,10 @@ export interface LiveFightCard {
   rounds?: RoundScore[];
   redPoints?: string | number;
   bluePoints?: string | number;
+  winStreak?: number;
+  streak?: number;
+  redWinStreak?: number;
+  blueWinStreak?: number;
   completedAt?: number;
   timestamp?: number;
 }

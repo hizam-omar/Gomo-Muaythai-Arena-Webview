@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CheckCircle2, ChevronDown, Clock3, Flag, ListOrdered, Medal, Radio, X } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Clock3, Flag, Flame, ListOrdered, Medal, Radio, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import type { Bout } from '../types';
 
 interface AvatarPreviewData {
@@ -59,7 +60,7 @@ function Avatar({ src, name, corner, onPreview }: AvatarPreviewData & { onPrevie
       type="button"
       onClick={() => onPreview(src && !failed ? src : undefined)}
       aria-label={`Open larger avatar for ${name}`}
-      className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 transition hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 sm:h-14 sm:w-14 ${border} ${background} ${corner === 'red' ? 'focus:ring-red-500' : 'focus:ring-blue-500'}`}
+      className={`flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 transition hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 sm:h-12 sm:w-12 ${border} ${background} ${corner === 'red' ? 'focus:ring-red-500' : 'focus:ring-blue-500'}`}
     >
       {src && !failed ? (
         <img src={src} alt={`${name} avatar`} className="h-full w-full object-cover" onError={() => setFailed(true)} />
@@ -144,129 +145,177 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
           : result === 'LOSS' ? 'border-rose-200 bg-rose-100/70 dark:border-rose-800 dark:bg-rose-950/80' : 'border-amber-200 bg-amber-100/70 dark:border-amber-800 dark:bg-amber-950/80';
 
   return (
-    <article className={`relative overflow-hidden rounded-xl border shadow-sm ${isLive ? 'animate-border-breathe bg-gradient-to-br from-red-50 via-white to-red-50 dark:from-red-950 dark:via-slate-900 dark:to-red-950' : isCompleted ? completedCardStyle : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}>
-      <div className={`flex items-start justify-between gap-2 border-b px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3 ${isLive ? 'border-red-200 bg-red-100/60' : isCompleted ? completedHeaderStyle : 'border-slate-100'}`}>
+    <motion.article layout transition={{ layout: { duration: 0.25, ease: "easeInOut" } }} className={`relative overflow-hidden rounded-xl border shadow-sm ${isLive ? 'animate-border-breathe bg-gradient-to-br from-red-50 via-white to-red-50 dark:from-red-950 dark:via-slate-900 dark:to-red-950' : isCompleted ? completedCardStyle : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}>
+      <div className={`flex items-start justify-between gap-1.5 border-b px-2.5 py-2 sm:gap-3 sm:px-4 sm:py-3 ${isLive ? 'border-red-200 bg-red-100/60' : isCompleted ? completedHeaderStyle : 'border-slate-100'}`}>
         <div className="min-w-0">
-          <h2 className="font-combat truncate text-sm font-black uppercase text-slate-900 dark:text-white sm:text-base">Bout #{bout.boutNumber}</h2>
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-slate-500">
+          <h2 className="font-combat truncate text-xs font-black uppercase text-slate-900 dark:text-white sm:text-base">Bout #{bout.boutNumber}</h2>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] font-semibold text-slate-500 sm:text-[11px]">
             {(!isCompleted || completedExpanded) && meta.map((item) => <span key={item}>• {item}</span>)}
           </div>
         </div>
-        <span className={`font-combat shrink-0 rounded-md px-2 py-1 text-[10px] font-black tracking-wide text-white sm:px-2.5 sm:text-xs ${isLive ? 'bg-red-600' : isCompleted ? 'bg-emerald-600' : 'bg-slate-500'}`}>
-          <span className="flex items-center gap-1.5">
-            {isLive ? <Radio className="h-3 w-3 animate-pulse" /> : isCompleted ? <CheckCircle2 className="h-3 w-3" /> : <Clock3 className="h-3 w-3" />}
-            {isLive ? 'LIVE NOW' : isCompleted ? 'COMPLETED' : 'WAITING'}
-          </span>
-        </span>
-      </div>
-
-      <div className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-1.5 px-2 sm:gap-4 sm:px-5 ${isCompleted && !completedExpanded ? 'py-2.5' : 'py-3 sm:py-4'}`}>
-        <div className={`flex min-w-0 items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/90 dark:border-red-900 dark:bg-red-950/60 sm:gap-3 sm:rounded-xl ${isCompleted && !completedExpanded ? 'p-1.5 sm:p-2' : 'p-1.5 sm:p-3'}`}>
-          <Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={(src) => setAvatarPreview({ src, name: bout.redName, corner: 'red' })} />
-          <div className="min-w-0">
-            <p className="text-[10px] font-extrabold tracking-wider text-red-700">RED</p>
-            <h3 className="font-combat truncate text-xs font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.redName}</h3>
-            {(!isCompleted || completedExpanded) && <p className="truncate text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">{bout.redGym}</p>}
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center justify-center gap-1">
-          <span className="text-xs font-black italic text-red-600 sm:text-sm">VS</span>
-          {isLive && <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-ping" />}
-        </div>
-
-        <div className={`flex min-w-0 flex-row-reverse items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50/90 text-right dark:border-blue-900 dark:bg-blue-950/60 sm:gap-3 sm:rounded-xl ${isCompleted && !completedExpanded ? 'p-1.5 sm:p-2' : 'p-1.5 sm:p-3'}`}>
-          <Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={(src) => setAvatarPreview({ src, name: bout.blueName, corner: 'blue' })} />
-          <div className="min-w-0">
-            <p className="text-[10px] font-extrabold tracking-wider text-blue-700">BLUE</p>
-            <h3 className="font-combat truncate text-xs font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.blueName}</h3>
-            {(!isCompleted || completedExpanded) && <p className="truncate text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">{bout.blueGym}</p>}
-          </div>
-        </div>
-      </div>
-
-      {isCompleted && completedExpanded && bout.methodOrMedal && (
-        <div className="mx-3 mb-3 rounded-lg border border-slate-200 bg-white/75 px-3 py-2 text-center text-[10px] font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300 sm:mx-5">
-          Result method: <span className="font-black text-slate-900 dark:text-white">{bout.methodOrMedal}</span>
-        </div>
-      )}
-
-      {hasScores && bout.status !== 'WAITING' && (!isCompleted || completedExpanded) && (
-        <div className={`mx-3 mb-3 overflow-hidden rounded-lg border sm:mx-5 ${isLive ? 'border-red-200 bg-white/90 dark:border-red-900 dark:bg-slate-900/90' : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800'}`}>
-          <button
-            type="button"
-            onClick={() => setScoresExpanded((expanded) => !expanded)}
-            aria-expanded={scoresExpanded}
-            className="flex w-full items-center justify-between gap-2 px-2.5 py-2.5 text-left hover:bg-slate-50/80 dark:hover:bg-slate-700/60 sm:gap-3 sm:px-3"
-          >
-            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-600">
-              <ListOrdered className="h-3.5 w-3.5 text-red-600" /> Round Points
-            </span>
-            <span className="flex items-center gap-2">
-              {(bout.redPoints !== '' || bout.bluePoints !== '') && (
-                <span className="rounded-md bg-slate-900 px-1.5 py-1 text-[9px] font-black text-white sm:px-2 sm:text-[10px]">
-                  Total <span className="text-red-300">{bout.redPoints || '–'}</span>
-                  <span className="px-1 text-slate-400">–</span>
-                  <span className="text-blue-300">{bout.bluePoints || '–'}</span>
-                </span>
-              )}
-              <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${scoresExpanded ? 'rotate-180' : ''}`} />
-            </span>
-          </button>
-          {scoresExpanded && (
-            <div className="border-t border-slate-200 px-3 py-3">
-              {bout.rounds.length > 0 && (
-                <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
-                  {bout.rounds.map((round) => (
-                    <div key={round.round} className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                      <p className="text-[9px] font-black text-slate-400">{round.round}</p>
-                      <p className="mt-0.5 text-xs font-black">
-                        <span className="text-red-600">{round.red}</span>
-                        <span className="px-1 text-slate-300">–</span>
-                        <span className="text-blue-600">{round.blue}</span>
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="mt-2 flex justify-center gap-3 text-[8px] font-extrabold uppercase tracking-wider">
-                <span className="text-red-600">Red</span>
-                <span className="text-blue-600">Blue</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {(hasResult || hasMedal || isCompleted) && (
-        <div className="flex flex-wrap justify-center gap-1.5 border-t border-white/70 bg-white/65 px-2 py-2.5 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/70 sm:gap-2 sm:px-4 sm:py-3">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
           {hasResult && (
-            <span className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1 text-[10px] font-black tracking-wide ${resultStyle}`}>
-              <Flag className="h-3.5 w-3.5" /> GOMO {result}
+            <span className={`font-combat inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-black tracking-wide sm:px-2.5 sm:py-1 sm:text-xs ${resultStyle}`}>
+              <Flag className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" /> GOMO {result}
             </span>
           )}
           {hasMedal && (
-            <span className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1 text-[10px] font-black tracking-wide ${medalStyle}`}>
-              <Medal className="h-3.5 w-3.5" /> {medal} MEDAL
+            <span className={`font-combat inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-black tracking-wide sm:px-2.5 sm:py-1 sm:text-xs ${medalStyle}`}>
+              <Medal className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" /> {medal} MEDAL
             </span>
           )}
-          {isCompleted && (
-            <button
-              type="button"
-              onClick={() => setCompletedExpanded((expanded) => !expanded)}
-              aria-expanded={completedExpanded}
-              className="font-combat inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-black uppercase tracking-wide text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-            >
-              {completedExpanded ? 'Hide Details' : 'Show Details'}
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${completedExpanded ? 'rotate-180' : ''}`} />
-            </button>
-          )}
+          <span className={`font-combat shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-black tracking-wide text-white sm:px-2.5 sm:py-1 sm:text-xs ${isLive ? 'bg-red-600' : isCompleted ? 'bg-emerald-600' : 'bg-slate-500'}`}>
+            <span className="flex items-center gap-1">
+              {isLive ? <Radio className="h-3 w-3 animate-pulse" /> : isCompleted ? <CheckCircle2 className="h-3 w-3" /> : <Clock3 className="h-3 w-3" />}
+              {isLive ? 'LIVE NOW' : isCompleted ? 'COMPLETED' : 'WAITING'}
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <div className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-1 px-1.5 sm:gap-4 sm:px-5 ${isCompleted && !completedExpanded ? 'py-1.5 sm:py-2.5' : 'py-2 sm:py-4'}`}>
+        <div className={`flex min-w-0 items-center gap-1 rounded-md border border-red-200 bg-red-50/90 dark:border-red-900 dark:bg-red-950/60 sm:gap-3 sm:rounded-xl ${isCompleted && !completedExpanded ? 'p-1 sm:p-2' : 'p-1.5 sm:p-3'}`}>
+          <Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={(src) => setAvatarPreview({ src, name: bout.redName, corner: 'red' })} />
+          <div className="min-w-0">
+            <p className="text-[8px] font-extrabold tracking-wider text-red-700 sm:text-[10px]">RED</p>
+            <div className="flex items-center gap-1 min-w-0">
+              <h3 className="font-combat truncate text-[11px] font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.redName}</h3>
+              {bout.redWinStreak && bout.redWinStreak > 0 ? (
+                <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-orange-100 px-1 py-0.2 text-[8px] font-black text-orange-700 dark:bg-orange-950 dark:text-orange-300 ring-1 ring-orange-300 dark:ring-orange-800 sm:px-1.5 sm:py-0.5 sm:text-[9px]" title={`${bout.redWinStreak} Fight Win Streak`}>
+                  <Flame className="h-2.5 w-2.5 fill-orange-500 text-orange-500 animate-pulse sm:h-3 sm:w-3" />
+                  <span>{bout.redWinStreak}W</span>
+                </span>
+              ) : null}
+            </div>
+            {(!isCompleted || completedExpanded) && <p className="truncate text-[9px] text-slate-500 dark:text-slate-400 sm:text-xs">{bout.redGym}</p>}
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center justify-center gap-0.5">
+          <span className="text-[10px] font-black italic text-red-600 sm:text-sm">VS</span>
+          {isLive && <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-ping" />}
+        </div>
+
+        <div className={`flex min-w-0 flex-row-reverse items-center gap-1 rounded-md border border-blue-200 bg-blue-50/90 text-right dark:border-blue-900 dark:bg-blue-950/60 sm:gap-3 sm:rounded-xl ${isCompleted && !completedExpanded ? 'p-1 sm:p-2' : 'p-1.5 sm:p-3'}`}>
+          <Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={(src) => setAvatarPreview({ src, name: bout.blueName, corner: 'blue' })} />
+          <div className="min-w-0">
+            <p className="text-[8px] font-extrabold tracking-wider text-blue-700 sm:text-[10px]">BLUE</p>
+            <div className="flex flex-row-reverse items-center justify-start gap-1 min-w-0">
+              <h3 className="font-combat truncate text-[11px] font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.blueName}</h3>
+              {bout.blueWinStreak && bout.blueWinStreak > 0 ? (
+                <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-orange-100 px-1 py-0.2 text-[8px] font-black text-orange-700 dark:bg-orange-950 dark:text-orange-300 ring-1 ring-orange-300 dark:ring-orange-800 sm:px-1.5 sm:py-0.5 sm:text-[9px]" title={`${bout.blueWinStreak} Fight Win Streak`}>
+                  <Flame className="h-2.5 w-2.5 fill-orange-500 text-orange-500 animate-pulse sm:h-3 sm:w-3" />
+                  <span>{bout.blueWinStreak}W</span>
+                </span>
+              ) : null}
+            </div>
+            {(!isCompleted || completedExpanded) && <p className="truncate text-[9px] text-slate-500 dark:text-slate-400 sm:text-xs">{bout.blueGym}</p>}
+          </div>
+        </div>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {isCompleted && completedExpanded && bout.methodOrMedal && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <div className="mx-3 mb-3 rounded-lg border border-slate-200 bg-white/75 px-3 py-2 text-center text-[10px] font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300 sm:mx-5">
+              Result method: <span className="font-black text-slate-900 dark:text-white">{bout.methodOrMedal}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence initial={false}>
+        {hasScores && bout.status !== 'WAITING' && (!isCompleted || completedExpanded) && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <div className={`mx-3 mb-3 overflow-hidden rounded-lg border sm:mx-5 ${isLive ? 'border-red-200 bg-white/90 dark:border-red-900 dark:bg-slate-900/90' : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800'}`}>
+              <button
+                type="button"
+                onClick={() => setScoresExpanded((expanded) => !expanded)}
+                aria-expanded={scoresExpanded}
+                className="flex w-full items-center justify-between gap-2 px-2.5 py-2.5 text-left hover:bg-slate-50/80 dark:hover:bg-slate-700/60 sm:gap-3 sm:px-3"
+              >
+                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-600">
+                  <ListOrdered className="h-3.5 w-3.5 text-red-600" /> Round Points
+                </span>
+                <span className="flex items-center gap-2">
+                  {(bout.redPoints !== '' || bout.bluePoints !== '') && (
+                    <span className="rounded-md bg-slate-900 px-1.5 py-1 text-[9px] font-black text-white sm:px-2 sm:text-[10px]">
+                      Total <span className="text-red-300">{bout.redPoints || '–'}</span>
+                      <span className="px-1 text-slate-400">–</span>
+                      <span className="text-blue-300">{bout.bluePoints || '–'}</span>
+                    </span>
+                  )}
+                  <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${scoresExpanded ? 'rotate-180' : ''}`} />
+                </span>
+              </button>
+              <AnimatePresence initial={false}>
+                {scoresExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                    className="overflow-hidden border-t border-slate-200 dark:border-slate-700"
+                  >
+                    <div className="px-3 py-3">
+                      {bout.rounds.length > 0 && (
+                        <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
+                          {bout.rounds.map((round) => (
+                            <div key={round.round} className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                              <p className="text-[9px] font-black text-slate-400">{round.round}</p>
+                              <p className="mt-0.5 text-xs font-black">
+                                <span className="text-red-600">{round.red}</span>
+                                <span className="px-1 text-slate-300">–</span>
+                                <span className="text-blue-600">{round.blue}</span>
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="mt-2 flex justify-center gap-3 text-[8px] font-extrabold uppercase tracking-wider">
+                        <span className="text-red-600">Red</span>
+                        <span className="text-blue-600">Blue</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {isCompleted && (
+        <div className="flex justify-center border-t border-slate-200/60 bg-white/65 px-1.5 py-1 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60">
+          <button
+            type="button"
+            onClick={() => setCompletedExpanded((expanded) => !expanded)}
+            aria-expanded={completedExpanded}
+            aria-label={completedExpanded ? 'Hide Details' : 'Show Details'}
+            title={completedExpanded ? 'Hide Details' : 'Show Details'}
+            className="font-combat inline-flex items-center justify-center gap-1 rounded-md border border-slate-300/80 bg-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-slate-700 shadow-xs transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:px-3 sm:py-1 sm:text-xs"
+          >
+            <span className="hidden sm:inline">{completedExpanded ? 'Hide Details' : 'Show Details'}</span>
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${completedExpanded ? 'rotate-180' : ''}`} />
+          </button>
         </div>
       )}
       {avatarPreview && createPortal(
         <AvatarPreview preview={avatarPreview} onDismiss={() => setAvatarPreview(null)} />,
         document.body,
       )}
-    </article>
+    </motion.article>
   );
 }
