@@ -1,5 +1,8 @@
 import logo from '../assets/images/gomo_logo_1785735883874.jpg';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, ShieldCheck, Sun } from 'lucide-react';
+import { useState } from 'react';
+import { AdminLoginModal } from './AdminLoginModal';
+import { isAdminAuthenticated } from '../lib/admin';
 
 interface NavbarProps {
   theme: 'light' | 'dark';
@@ -7,8 +10,14 @@ interface NavbarProps {
 }
 
 export function Navbar({ theme, onToggleTheme }: NavbarProps) {
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const openAdmin = () => {
+    if (isAdminAuthenticated()) window.location.assign('/fighters');
+    else setShowAdminLogin(true);
+  };
+
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-slate-900">
+    <><header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-slate-900">
       <div className="mx-auto flex max-w-4xl items-center px-2.5 py-1.5 sm:px-4 sm:py-3">
         <div className="h-8 w-8 shrink-0 overflow-hidden rounded-lg sm:h-10 sm:w-10 sm:rounded-xl">
           <img src={logo} alt="GOMO Logo" className="h-full w-full object-cover" />
@@ -28,7 +37,8 @@ export function Navbar({ theme, onToggleTheme }: NavbarProps) {
         >
           {theme === 'light' ? <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
         </button>
+        <button type="button" data-testid="arena-admin-button" onClick={openAdmin} aria-label="Open fighter administration" title="Fighter administration" className="ml-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm transition hover:bg-red-700 sm:h-9 sm:w-9 sm:rounded-xl"><ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" /></button>
       </div>
-    </header>
+    </header>{showAdminLogin && <AdminLoginModal onDismiss={() => setShowAdminLogin(false)} onSuccess={() => window.location.assign('/fighters')} />}</>
   );
 }

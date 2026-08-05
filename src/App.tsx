@@ -7,9 +7,10 @@ import { StatusBanner } from './components/StatusBanner';
 import { VictoryOverlay } from './components/VictoryOverlay';
 import { TournamentStandingsModal } from './components/TournamentStandingsModal';
 import { FighterProfilePage } from './components/FighterProfilePage';
+import { AdminFightersPage } from './components/AdminFightersPage';
 import { initFirebase } from './lib/firebase';
 import { fighterProfileUrl, fighterSlug } from './lib/fighter-profile';
-import type { Bout, Fighter, LiveFightCard, RoundScore } from './types';
+import type { Bout, FightRecord, Fighter, LiveFightCard, RoundScore } from './types';
 
 type FeedFilter = 'ALL' | 'LIVE' | 'WAITING' | 'COMPLETED';
 type Theme = 'light' | 'dark';
@@ -302,6 +303,7 @@ export default function App() {
   });
   const [bridgeBouts, setBridgeBouts] = useState<Bout[]>([]);
   const [rawCards, setRawCards] = useState<Array<LiveFightCard & { docId: string }>>([]);
+  const [fightRecords, setFightRecords] = useState<FightRecord[]>([]);
   const [fighters, setFighters] = useState<Record<string, Fighter>>({});
   const [filter, setFilter] = useState<FeedFilter>('ALL');
   const [fighterSearch, setFighterSearch] = useState('');
@@ -407,10 +409,17 @@ export default function App() {
       setIsLoading(false);
     });
 
+    const unsubscribeFightRecords = onSnapshot(collection(db, 'fight_records'), (snapshot) => {
+      setFightRecords(snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as FightRecord) })));
+    }, (error) => {
+      console.error('Fight records listener error:', error);
+    });
+
     return () => {
       if (bridgeRefreshTimer) window.clearInterval(bridgeRefreshTimer);
       unsubscribeFighters();
       unsubscribeCards();
+      unsubscribeFightRecords();
     };
   }, []);
 
@@ -537,6 +546,10 @@ export default function App() {
   const requestedFighter = requestedProfileSlug
     ? Object.values(fighters).find((fighter) => fighterSlug(fighter) === requestedProfileSlug)
     : undefined;
+
+  if (requestedProfileSlug === 'fighters') {
+    return <AdminFightersPage fighters={fighters} fightRecords={fightRecords} liveCards={rawCards} isLoading={isLoading} isConnected={isFirebaseConnected} theme={theme} onToggleTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')} />;
+  }
 
   if (requestedProfileSlug) {
     return (

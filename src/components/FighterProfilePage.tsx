@@ -4,6 +4,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import logo from '../assets/images/gomo_logo_1785735883874.jpg';
 import { fighterSlug, fighterWeightCategory } from '../lib/fighter-profile';
 import { initFirebase } from '../lib/firebase';
+import { isAdminAuthenticated } from '../lib/admin';
 import type { Fighter } from '../types';
 
 interface FighterProfilePageProps {
@@ -228,14 +229,14 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
   const [unlockOpen, setUnlockOpen] = useState(false);
   const [pin, setPin] = useState('');
   const [unlockError, setUnlockError] = useState('');
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(() => isAdminAuthenticated() && new URLSearchParams(window.location.search).get('edit') === '1');
   const [form, setForm] = useState<EditableFighter | null>(fighter ? editableValues(fighter) : null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [photoError, setPhotoError] = useState('');
   const [photoBusy, setPhotoBusy] = useState(false);
 
   useEffect(() => {
-    if (fighter && !editing) setForm(editableValues(fighter));
+    if (fighter && (!editing || form === null)) setForm(editableValues(fighter));
   }, [fighter, editing]);
 
   useEffect(() => {
@@ -283,6 +284,15 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
     setEditing(true);
   };
 
+  const requestEdit = () => {
+    if (isAdminAuthenticated()) {
+      setForm(editableValues(fighter!));
+      setEditing(true);
+      return;
+    }
+    setUnlockOpen(true);
+  };
+
   const save = async () => {
     if (!fighter?.firestoreDocId || !form) return;
     const db = initFirebase();
@@ -312,7 +322,7 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
           <img src={logo} alt="GOMO Logo" className="h-9 w-9 rounded-xl object-cover" />
           <div className="min-w-0 flex-1"><p className="font-combat truncate text-sm font-black uppercase">GOMO Fighter Profile</p><p className="text-[10px] font-semibold text-slate-500">Official public fighter information</p></div>
           <button type="button" onClick={onToggleTheme} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-amber-300 dark:hover:bg-slate-700">{theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}</button>
-          {!editing && <button type="button" data-testid="profile-admin-button" onClick={() => setUnlockOpen(true)} aria-label="Edit fighter profile" title="Edit fighter profile" className="grid h-9 w-9 place-items-center rounded-lg bg-red-600 text-white shadow hover:bg-red-700"><ShieldCheck className="h-4 w-4" /></button>}
+          {!editing && <button type="button" data-testid="profile-admin-button" onClick={requestEdit} aria-label="Edit fighter profile" title={isAdminAuthenticated() ? 'Edit profile as admin' : 'Unlock profile editing'} className="grid h-9 w-9 place-items-center rounded-lg bg-red-600 text-white shadow hover:bg-red-700"><ShieldCheck className="h-4 w-4" /></button>}
         </div>
       </header>
 

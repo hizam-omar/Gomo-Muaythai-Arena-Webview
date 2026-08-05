@@ -63,6 +63,7 @@ export interface Fighter {
   favTechnique?: string;
   createdAt?: number;
   updatedAt?: number;
+  isStarred?: boolean;
   imageUri?: string;
   photoUrl?: string;
   avatarUrl?: string;
@@ -73,9 +74,17 @@ export interface Fighter {
   draws?: number;
 }
 
+export interface FightRecord {
+  id?: string | number;
+  fighterId?: string | number;
+  medal?: string;
+  result?: string;
+}
+
 export interface LiveFightCard {
   id?: string | number;
   fighterId?: string | number | null;
+  linkedFightRecordId?: string | number | null;
   eventName?: string;
   eventType?: string;
   eventStatus?: string;
