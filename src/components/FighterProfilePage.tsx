@@ -137,22 +137,11 @@ function Section({ eyebrow, title, children }: { eyebrow: string; title: string;
   );
 }
 
-const WEIGHT_CLASSES = [
-  { name: 'Atomweight', range: '≤25 kg', target: 25 },
-  { name: 'Mini Flyweight', range: '26–30 kg', target: 30 },
-  { name: 'Strawweight', range: '31–35 kg', target: 35 },
-  { name: 'Flyweight', range: '36–42 kg', target: 42 },
-  { name: 'Bantamweight', range: '43–50 kg', target: 48 },
-  { name: 'Featherweight', range: '51–57 kg', target: 54 },
-  { name: 'Lightweight', range: '58–65 kg', target: 60 },
-  { name: 'Welterweight', range: '66–71 kg', target: 67 },
-  { name: 'Middleweight', range: '>71 kg', target: 75 },
-];
-
-function EditInput({ label, value, onChange, type = 'text', required = false, placeholder }: {
+function EditInput({ label, value, onChange, type = 'text', required = false, placeholder, uppercase }: {
   label: string; value: string | number; onChange: (value: string) => void;
-  type?: string; required?: boolean; placeholder?: string;
+  type?: string; required?: boolean; placeholder?: string; uppercase?: boolean;
 }) {
+  const shouldUppercase = uppercase ?? type === 'text';
   return (
     <label className="block">
       <span className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">{label}{required && <span className="text-red-600"> *</span>}</span>
@@ -161,11 +150,23 @@ function EditInput({ label, value, onChange, type = 'text', required = false, pl
         inputMode={type === 'number' ? 'decimal' : type === 'tel' ? 'tel' : undefined}
         value={value}
         placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-xl border border-slate-300 bg-transparent px-3.5 py-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-600 focus:ring-2 focus:ring-red-100 dark:border-slate-700 dark:text-white dark:focus:ring-red-950"
+        onChange={(event) => onChange(shouldUppercase ? event.target.value.toLocaleUpperCase() : event.target.value)}
+        className={`w-full rounded-xl border border-slate-300 bg-transparent px-3.5 py-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-600 focus:ring-2 focus:ring-red-100 dark:border-slate-700 dark:text-white dark:focus:ring-red-950 ${shouldUppercase ? 'uppercase' : ''}`}
       />
     </label>
   );
+}
+
+function dobToDateInput(value: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return '';
+  return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+}
+
+function dateInputToDob(value: string): string {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
 }
 
 function EditSection({ number, title, optional, children }: { number: number; title: string; optional?: boolean; children: ReactNode }) {
@@ -180,17 +181,6 @@ function EditSection({ number, title, optional, children }: { number: number; ti
   );
 }
 
-function ChipGroup({ label, values, selected, onSelect }: { label: string; values: string[]; selected: string; onSelect: (value: string) => void }) {
-  return (
-    <fieldset>
-      <legend className="mb-2 text-xs font-bold text-slate-600 dark:text-slate-300">{label}</legend>
-      <div className="flex flex-wrap gap-2">
-        {values.map((value) => <button key={value} type="button" aria-pressed={selected === value} onClick={() => onSelect(value)} className={`rounded-full border px-3 py-2 text-xs font-bold transition ${selected === value ? 'border-red-600 bg-red-600 text-white shadow-sm' : 'border-slate-300 bg-white text-slate-600 hover:border-red-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300'}`}>{value}</button>)}
-      </div>
-    </fieldset>
-  );
-}
-
 export function ProfileEditor({ form, onText, onNumber, onPhoto, photoError, photoBusy }: {
   form: EditableFighter;
   onText: (key: keyof EditableFighter) => (value: string) => void;
@@ -200,7 +190,6 @@ export function ProfileEditor({ form, onText, onNumber, onPhoto, photoError, pho
   photoBusy: boolean;
 }) {
   const photo = publicAvatar({ imageUri: form.imageUri });
-  const currentCategory = fighterWeightCategory(form.weightKg).split(' (')[0];
   return (
     <div className="space-y-4" data-testid="fighter-edit-form">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
@@ -225,22 +214,16 @@ export function ProfileEditor({ form, onText, onNumber, onPhoto, photoError, pho
         <EditInput label="Nickname (e.g., HARRAZ GOMO)" value={form.nickname} onChange={onText('nickname')} required />
         <EditInput label="No KP / MyKad Number" value={form.nokp} onChange={onText('nokp')} />
         <EditInput label="IFMA License Number" value={form.ifmaLicense} onChange={onText('ifmaLicense')} />
-        <EditInput label="Date of Birth (DD/MM/YYYY)" value={form.dob} onChange={onText('dob')} placeholder="DD/MM/YYYY e.g., 08/10/2008" required />
+        <EditInput label="Date of Birth" type="date" value={dobToDateInput(form.dob)} onChange={(value) => onText('dob')(dateInputToDob(value))} required />
         <div className="grid gap-3 sm:grid-cols-3"><EditInput label="Age" type="number" value={form.age} onChange={onNumber('age')} /><EditInput label="Weight (kg)" type="number" value={form.weightKg} onChange={onNumber('weightKg')} required /><EditInput label="Height (cm)" type="number" value={form.heightCm} onChange={onNumber('heightCm')} /></div>
-        <div className="rounded-xl bg-slate-100 p-3 dark:bg-slate-950">
-          <div className="mb-2 flex items-center justify-between gap-3"><span className="text-xs font-black text-red-700 dark:text-red-400">Weight Class / Category</span><span className="text-[11px] font-black text-slate-500">{fighterWeightCategory(form.weightKg)}</span></div>
-          <div className="flex gap-2 overflow-x-auto pb-1">{WEIGHT_CLASSES.map((weightClass) => <button type="button" key={weightClass.name} onClick={() => onNumber('weightKg')(String(weightClass.target))} className={`shrink-0 rounded-full border px-3 py-2 text-[11px] font-bold ${currentCategory === weightClass.name ? 'border-red-600 bg-red-600 text-white' : 'border-slate-300 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'}`}>{weightClass.name} ({weightClass.range})</button>)}</div>
-        </div>
       </EditSection>
 
-      <EditSection number={2} title="Fight Record & Specs">
+      <EditSection number={2} title="Fight Record">
         <div className="grid grid-cols-3 gap-3"><EditInput label="Wins" type="number" value={form.wins} onChange={onNumber('wins')} /><EditInput label="Losses" type="number" value={form.losses} onChange={onNumber('losses')} /><EditInput label="Draws" type="number" value={form.draws} onChange={onNumber('draws')} /></div>
-        <ChipGroup label="Stance" values={['Orthodox', 'Southpaw', 'Switch']} selected={form.stance} onSelect={onText('stance')} />
-        <ChipGroup label="Favorite Technique" values={['Knee Strike', 'Middle Kick', 'Teep Kick', 'Elbow', 'Low Kick', 'Clinch']} selected={form.favTechnique} onSelect={onText('favTechnique')} />
       </EditSection>
 
       <EditSection number={3} title="School & Contact Info">
-        <EditInput label="School" value={form.school} onChange={onText('school')} /><EditInput label="Form / Class" value={form.gradeClass} onChange={onText('gradeClass')} /><EditInput label="Class Teacher" value={form.classTeacher} onChange={onText('classTeacher')} /><EditInput label="Senior Assistant (Academic)" value={form.pkTeacher} onChange={onText('pkTeacher')} /><EditInput label="Club / Gym Name" value={form.club} onChange={onText('club')} /><EditInput label="Manager Contact" value={form.manager} onChange={onText('manager')} /><EditInput label="Highlight / Fight Video URL (YouTube, MP4, etc.)" value={form.videoUrl} onChange={onText('videoUrl')} placeholder="https://www.youtube.com/watch?v=..." />
+        <EditInput label="School" value={form.school} onChange={onText('school')} /><EditInput label="Form / Class" value={form.gradeClass} onChange={onText('gradeClass')} /><EditInput label="Class Teacher" value={form.classTeacher} onChange={onText('classTeacher')} /><EditInput label="Senior Assistant (Academic)" value={form.pkTeacher} onChange={onText('pkTeacher')} /><EditInput label="Club / Gym Name" value={form.club} onChange={onText('club')} /><EditInput label="Manager Contact" value={form.manager} onChange={onText('manager')} /><EditInput label="Highlight / Fight Video URL (YouTube, MP4, etc.)" value={form.videoUrl} onChange={onText('videoUrl')} placeholder="https://www.youtube.com/watch?v=..." uppercase={false} />
       </EditSection>
 
       <EditSection number={4} title="Parent / Guardian Info" optional>
@@ -283,6 +266,10 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
   const initials = (fighter?.nickname || fighter?.name || 'GOMO').split(/\s+/).map((part) => part[0]).join('').slice(0, 2);
   const totalFights = (form?.wins || 0) + (form?.losses || 0) + (form?.draws || 0);
   const winRate = totalFights ? Math.floor(((form?.wins || 0) / totalFights) * 100) : 0;
+  const myKadValue = fighter?.nokp?.trim() || '';
+  const myKadDigits = myKadValue.replace(/\D/g, '');
+  const usesMyKadKey = myKadValue !== '';
+  const nicknameKey = fighter ? fighterSlug(fighter) : '';
   const updatedLabel = useMemo(() => {
     const timestamp = Number(fighter?.updatedAt || fighter?.createdAt);
     return timestamp ? new Intl.DateTimeFormat('en-MY', { dateStyle: 'medium', timeStyle: 'short' }).format(timestamp) : 'N/A';
@@ -308,9 +295,14 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
   };
 
   const unlock = () => {
-    const expected = (fighter?.nokp || '').replace(/\D/g, '').slice(-6);
-    if (!/^\d{6}$/.test(pin)) return setUnlockError('Enter exactly 6 digits.');
-    if (!expected || pin !== expected) return setUnlockError('The MyKad digits do not match this fighter.');
+    if (usesMyKadKey) {
+      if (myKadDigits.length < 6) return setUnlockError('This fighter’s MyKad record does not contain six digits. Please ask an administrator to correct it.');
+      if (!/^\d{6}$/.test(pin)) return setUnlockError('Enter exactly the last 6 digits of the MyKad number. Nickname login is disabled for this fighter.');
+      if (pin !== myKadDigits.slice(-6)) return setUnlockError('Incorrect MyKad key. Enter the last 6 digits only; the nickname key is not accepted.');
+    } else {
+      if (!pin.trim()) return setUnlockError(`Enter the nickname key shown in the profile link: ${nicknameKey}`);
+      if (pin.trim().toLowerCase() !== nicknameKey) return setUnlockError(`Incorrect nickname key. Enter “${nicknameKey}” exactly.`);
+    }
     setUnlockOpen(false);
     setPin('');
     setUnlockError('');
@@ -361,10 +353,10 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
       </header>
 
       <main className="mx-auto max-w-4xl space-y-4 px-3 py-4 sm:px-4 sm:py-6">
-        <section className="relative overflow-hidden rounded-3xl bg-slate-950 p-5 text-white shadow-xl sm:p-7">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(220,38,38,0.42),transparent_45%)]" />
-          {avatar && <button type="button" onClick={() => setPhotoPreviewOpen(true)} aria-label={`Open larger photo of ${form.nickname || form.name}`} className="group absolute left-5 top-5 z-10 h-24 w-24 cursor-zoom-in overflow-hidden rounded-2xl outline-none transition hover:bg-slate-950/10 focus:ring-2 focus:ring-white sm:left-7 sm:top-7 sm:h-32 sm:w-32"><span className="absolute inset-x-0 bottom-0 translate-y-full bg-slate-950/75 py-1 text-[9px] font-black uppercase tracking-wider text-white transition group-hover:translate-y-0 group-focus:translate-y-0">View photo</span></button>}
-          <div className="relative flex items-center gap-4 sm:gap-6"><div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-red-500 bg-slate-800 text-2xl font-black sm:h-32 sm:w-32">{avatar ? <img src={avatar} alt={`${form.nickname || form.name} profile`} className="h-full w-full object-cover" /> : initials}</div><div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[0.22em] text-red-400">Kelab Muaythai Gomo</p><h1 className="font-combat mt-1 text-2xl font-black uppercase leading-none sm:text-4xl">{form.nickname || form.name}</h1><p className="mt-2 text-sm font-semibold text-slate-300">{form.name}</p><div className="mt-3 flex flex-wrap gap-2 text-[10px] font-black uppercase"><span className="rounded-full bg-red-600 px-3 py-1">{form.stance}</span><span className="rounded-full bg-white/10 px-3 py-1">{fighterWeightCategory(form.weightKg)}</span><span className="rounded-full bg-white/10 px-3 py-1">{form.wins}W · {form.losses}L · {form.draws}D</span></div></div></div>
+        <section className="relative overflow-hidden rounded-3xl border border-red-100 bg-gradient-to-br from-white via-red-50 to-rose-100 p-5 text-slate-950 shadow-lg sm:p-7">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(248,113,113,0.24),transparent_48%)]" />
+          {avatar && <button type="button" onClick={() => setPhotoPreviewOpen(true)} aria-label={`Open larger photo of ${form.nickname || form.name}`} className="group absolute left-5 top-5 z-10 h-24 w-24 cursor-zoom-in overflow-hidden rounded-2xl outline-none transition hover:bg-red-950/10 focus:ring-2 focus:ring-red-500 sm:left-7 sm:top-7 sm:h-32 sm:w-32"><span className="absolute inset-x-0 bottom-0 translate-y-full bg-slate-950/75 py-1 text-[9px] font-black uppercase tracking-wider text-white transition group-hover:translate-y-0 group-focus:translate-y-0">View photo</span></button>}
+          <div className="relative flex items-center gap-4 sm:gap-6"><div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-red-500 bg-white text-2xl font-black text-red-700 shadow-sm sm:h-32 sm:w-32">{avatar ? <img src={avatar} alt={`${form.nickname || form.name} profile`} className="h-full w-full object-cover" /> : initials}</div><div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[0.22em] text-red-600">Kelab Muaythai Gomo</p><h1 className="font-combat mt-1 text-2xl font-black uppercase leading-none sm:text-4xl">{form.nickname || form.name}</h1><p className="mt-2 text-sm font-semibold text-slate-700">{form.name}</p><div className="mt-3 flex flex-wrap gap-2 text-[10px] font-black uppercase"><span className="rounded-full bg-red-600 px-3 py-1 text-white">{form.wins}W · {form.losses}L · {form.draws}D</span></div></div></div>
         </section>
 
         {editing && <div className="sticky top-[57px] z-30 flex items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 shadow dark:border-amber-800 dark:bg-amber-950"><div className="flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-100"><Pencil className="h-4 w-4" /> Profile editing unlocked</div><div className="flex gap-2"><button type="button" onClick={() => { setEditing(false); setForm(editableValues(fighter)); setSaveState('idle'); }} className="rounded-lg border border-amber-300 px-3 py-2 text-xs font-bold dark:border-amber-700">Cancel</button><button type="button" data-testid="save-profile-button" onClick={save} disabled={saveState === 'saving'} className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-black text-white disabled:opacity-60"><Save className="h-3.5 w-3.5" />{saveState === 'saving' ? 'Saving…' : 'Save profile'}</button></div></div>}
@@ -375,7 +367,7 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
           <ProfileEditor form={form} onText={setText} onNumber={setNumber} onPhoto={uploadPhoto} photoError={photoError} photoBusy={photoBusy} />
         ) : (
           <>
-            <Section eyebrow="Fighter profile" title="Personal & Physical Specs"><Field label="Full Name" value={form.name} editing={false} /><Field label="Nickname" value={form.nickname} editing={false} /><Field label="MyKad / NO KP" value={adminMode ? form.nokp : MASK} editing={false} /><Field label="IFMA License" value={form.ifmaLicense} editing={false} /><Field label="Date of Birth" value={adminMode ? form.dob : MASK} editing={false} /><Field label="Age" value={form.age} editing={false} /><Field label="Weight" value={`${form.weightKg} kg (${fighterWeightCategory(form.weightKg)})`} editing={false} /><Field label="Height" value={`${form.heightCm} cm`} editing={false} /><Field label="Fighting Stance" value={form.stance} editing={false} /><Field label="Favorite Strike" value={form.favTechnique} editing={false} /><Field label="Fight Record (W/L/D)" value={`${form.wins}W - ${form.losses}L - ${form.draws}D`} editing={false} /><Field label="Record Win Rate" value={`${winRate}%`} editing={false} /></Section>
+            <Section eyebrow="Fighter profile" title="Personal & Physical Specs"><Field label="Full Name" value={form.name} editing={false} /><Field label="Nickname" value={form.nickname} editing={false} /><Field label="MyKad / NO KP" value={adminMode ? form.nokp : MASK} editing={false} /><Field label="IFMA License" value={form.ifmaLicense} editing={false} /><Field label="Date of Birth" value={adminMode ? form.dob : MASK} editing={false} /><Field label="Age" value={form.age} editing={false} /><Field label="Weight" value={`${form.weightKg} kg (${fighterWeightCategory(form.weightKg)})`} editing={false} /><Field label="Height" value={`${form.heightCm} cm`} editing={false} /><Field label="Fight Record (W/L/D)" value={`${form.wins}W - ${form.losses}L - ${form.draws}D`} editing={false} /><Field label="Record Win Rate" value={`${winRate}%`} editing={false} /></Section>
             <Section eyebrow="Academic info" title="School & Academic Specs"><Field label="School" value={form.school} editing={false} /><Field label="Form / Class" value={form.gradeClass} editing={false} /><Field label="Class Teacher" value={form.classTeacher} editing={false} /><Field label="Senior Assistant (Academic)" value={form.pkTeacher} editing={false} /></Section>
             <Section eyebrow="Parent / guardian info" title="Parent & Emergency Contact"><Field label="Parent Name" value={form.parentName} editing={false} /><Field label="Parent H/P No." value={adminMode ? form.parentPhone : MASK} editing={false} /><Field label="Parent Email" value={adminMode ? form.parentEmail : MASK} editing={false} /></Section>
             <Section eyebrow="Official club" title="Club & Management"><Field label="Club" value={form.club} editing={false} /><Field label="Manager" value={form.manager} editing={false} /></Section>
@@ -427,7 +419,7 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
 
       {photoPreviewOpen && avatar && <div className="fixed inset-0 z-[170] grid place-items-center bg-slate-950/90 p-4" role="dialog" aria-modal="true" aria-label={`${form.nickname || form.name} photo preview`} onClick={() => setPhotoPreviewOpen(false)}><div className="relative max-h-[92vh] max-w-3xl" onClick={(event) => event.stopPropagation()}><img src={avatar} alt={`${form.nickname || form.name} full-size profile`} className="max-h-[88vh] max-w-full rounded-2xl object-contain shadow-2xl" /><button type="button" onClick={() => setPhotoPreviewOpen(false)} aria-label="Close photo preview" className="absolute right-2 top-2 grid h-10 w-10 place-items-center rounded-full bg-slate-950/75 text-white backdrop-blur hover:bg-slate-950"><X className="h-5 w-5" /></button><p className="absolute inset-x-0 bottom-2 text-center"><span className="rounded-full bg-slate-950/75 px-3 py-1.5 text-xs font-black uppercase text-white backdrop-blur">{form.nickname || form.name}</span></p></div></div>}
 
-      {unlockOpen && <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/75 p-4" role="dialog" aria-modal="true" aria-labelledby="unlock-title" onClick={() => setUnlockOpen(false)}><div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-900" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div className="grid h-11 w-11 place-items-center rounded-xl bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"><LockKeyhole className="h-5 w-5" /></div><button type="button" onClick={() => setUnlockOpen(false)} aria-label="Close unlock dialog" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><X className="h-4 w-4" /></button></div><h2 id="unlock-title" className="mt-4 text-xl font-black">Unlock profile editing</h2><p className="mt-1 text-sm text-slate-500">Enter the last 6 digits of this fighter’s MyKad number.</p><label className="mt-4 block text-[11px] font-black uppercase tracking-wide text-slate-500" htmlFor="mykad-pin">Last 6 MyKad digits</label><input id="mykad-pin" data-testid="mykad-pin-input" autoFocus inputMode="numeric" maxLength={6} value={pin} onChange={(event) => { setPin(event.target.value.replace(/\D/g, '').slice(0, 6)); setUnlockError(''); }} onKeyDown={(event) => { if (event.key === 'Enter') unlock(); }} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-center font-mono text-2xl font-black tracking-[0.35em] outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:border-slate-700 dark:bg-slate-950 dark:focus:ring-red-950" placeholder="••••••" />{unlockError && <p role="alert" className="mt-2 text-xs font-bold text-red-600">{unlockError}</p>}<button type="button" data-testid="unlock-profile-button" onClick={unlock} className="mt-4 w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-black text-white hover:bg-red-700">Verify & edit profile</button></div></div>}
+      {unlockOpen && <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/75 p-4" role="dialog" aria-modal="true" aria-labelledby="unlock-title" onClick={() => setUnlockOpen(false)}><div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-900" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div className="grid h-11 w-11 place-items-center rounded-xl bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"><LockKeyhole className="h-5 w-5" /></div><button type="button" onClick={() => setUnlockOpen(false)} aria-label="Close unlock dialog" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><X className="h-4 w-4" /></button></div><h2 id="unlock-title" className="mt-4 text-xl font-black">Unlock profile editing</h2><div className={`mt-3 rounded-xl border px-3 py-2.5 text-xs font-semibold leading-relaxed ${usesMyKadKey ? 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200' : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200'}`}>{usesMyKadKey ? <>This fighter has a MyKad on record. Enter its <strong>last 6 digits</strong>. Nickname login is disabled.</> : <>This fighter has no MyKad on record. Use the nickname key from the profile link: <strong className="font-mono">{nicknameKey}</strong>.</>}</div><label className="mt-4 block text-[11px] font-black uppercase tracking-wide text-slate-500" htmlFor="profile-key">{usesMyKadKey ? 'Last 6 MyKad digits' : 'Nickname key'}</label><input id="profile-key" data-testid="profile-key-input" autoFocus inputMode={usesMyKadKey ? 'numeric' : 'text'} autoCapitalize="none" autoCorrect="off" maxLength={usesMyKadKey ? 6 : 80} value={pin} onChange={(event) => { const value = usesMyKadKey ? event.target.value.replace(/\D/g, '').slice(0, 6) : event.target.value.toLowerCase().replace(/\s+/g, '-'); setPin(value); setUnlockError(''); }} onKeyDown={(event) => { if (event.key === 'Enter') unlock(); }} className={`mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-center font-mono font-black outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:border-slate-700 dark:bg-slate-950 dark:focus:ring-red-950 ${usesMyKadKey ? 'text-2xl tracking-[0.35em]' : 'text-base tracking-wide'}`} placeholder={usesMyKadKey ? '••••••' : nicknameKey} />{unlockError && <p role="alert" className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700 dark:bg-red-950 dark:text-red-300">{unlockError}</p>}<button type="button" data-testid="unlock-profile-button" onClick={unlock} className="mt-4 w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-black text-white hover:bg-red-700">Verify & edit profile</button></div></div>}
     </div>
   );
 }

@@ -11,6 +11,7 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || bundledConfig.messagingSenderId,
   appId: import.meta.env.VITE_FIREBASE_APP_ID || bundledConfig.appId,
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || bundledConfig.measurementId,
+  databaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID || bundledConfig.firestoreDatabaseId || '(default)',
 };
 
 let db: Firestore | null = null;
@@ -22,9 +23,9 @@ export function initFirebase(): Firestore | null {
     if (!firebaseConfig.projectId) return null;
 
     const app = getApps()[0] || initializeApp(firebaseConfig);
-    // GOMO uses the project's Firestore `(default)` database, matching
-    // FirebaseFirestore.getInstance(app) in the Android application.
-    db = getFirestore(app);
+    db = firebaseConfig.databaseId === '(default)'
+      ? getFirestore(app)
+      : getFirestore(app, firebaseConfig.databaseId);
 
     // Analytics is optional and is not supported by every Android WebView.
     void isSupported().then((supported) => {

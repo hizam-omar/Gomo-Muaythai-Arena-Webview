@@ -14,6 +14,11 @@ export function fighterProfileUrl(fighter: Fighter): string {
   return `/${fighterSlug(fighter)}`;
 }
 
+export function fighterPublicProfileUrl(fighter: Fighter): string {
+  const origin = (import.meta.env.VITE_PUBLIC_APP_URL || 'https://gomo-club.ai.studio').replace(/\/+$/, '');
+  return `${origin}${fighterProfileUrl(fighter)}`;
+}
+
 export function fighterWeightCategory(weight = 0): string {
   if (weight <= 25) return 'Atomweight (≤25kg)';
   if (weight <= 30) return 'Mini Flyweight (26–30kg)';

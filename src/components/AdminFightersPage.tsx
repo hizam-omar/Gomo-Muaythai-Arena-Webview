@@ -1,11 +1,11 @@
 import { useMemo, useState, type ChangeEvent } from 'react';
-import { ArrowLeft, Check, Cloud, Download, LogOut, Medal, Moon, Pencil, RefreshCw, Save, Search, Star, Sun, Trash2, Trophy, UserPlus, Users, X } from 'lucide-react';
+import { ArrowLeft, Check, Cloud, Download, Link2, LogOut, Medal, Moon, Pencil, RefreshCw, Save, Search, Star, Sun, Trash2, Trophy, UserPlus, Users, X } from 'lucide-react';
 import { deleteDoc, doc, setDoc, updateDoc } from 'firebase/firestore';
 import logo from '../assets/images/gomo_logo_1785735883874.jpg';
 import { AdminLoginModal } from './AdminLoginModal';
 import { editableValues, preparePhoto, ProfileEditor, type EditableFighter } from './FighterProfilePage';
 import { endAdminSession, isAdminAuthenticated } from '../lib/admin';
-import { fighterProfileUrl, fighterWeightCategory } from '../lib/fighter-profile';
+import { fighterProfileUrl, fighterPublicProfileUrl, fighterWeightCategory } from '../lib/fighter-profile';
 import { initFirebase } from '../lib/firebase';
 import type { FightRecord, Fighter, LiveFightCard } from '../types';
 
@@ -57,15 +57,18 @@ function FightRecordDashboard({ wins, losses, draws }: { wins: number; losses: n
   return <section className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className="relative grid h-20 w-20 shrink-0 place-items-center rounded-full" style={{ background }}><div className="grid h-14 w-14 place-items-center rounded-full bg-white text-center dark:bg-slate-900"><div><p className="text-lg font-black">{total}</p><p className="text-[7px] font-black uppercase text-slate-400">Fights</p></div></div></div><div className="min-w-0 flex-1"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-red-600">Fight performance</p><h2 className="font-combat text-base font-black uppercase">W / L / D Dashboard</h2><div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-black"><span className="rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-800">W {wins}</span><span className="rounded-full bg-rose-100 px-2 py-0.5 text-rose-800">L {losses}</span><span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-800">D {draws}</span></div><p className="mt-1 text-[9px] font-semibold text-slate-400">Combined fighter records</p></div></section>;
 }
 
-function FighterRosterCard({ fighter, medals, isLive, selected, selectionMode, onSelect, onStar, onEdit, onDelete }: {
+function FighterRosterCard({ fighter, medals, isLive, selected, selectionMode, onSelect, onStar, onDelete }: {
   fighter: Fighter; medals: MedalCounts; isLive: boolean; selected: boolean; selectionMode: boolean;
-  onSelect: () => void; onStar: () => void; onEdit: () => void; onDelete: () => void; key?: string;
+  onSelect: () => void; onStar: () => void; onDelete: () => void; key?: string;
 }) {
   const photo = avatarUrl(fighter);
   const name = fighter.nickname || fighter.name || 'GOMO Fighter';
+  const fullName = fighter.name || name;
+  const nicknameTag = String(fighter.nickname || fighter.name || 'GOMO').replace(/[^\p{L}\p{N}]/gu, '');
   const fights = Number(fighter.wins || 0) + Number(fighter.losses || 0) + Number(fighter.draws || 0);
   const winRate = fights ? Math.floor((Number(fighter.wins || 0) / fights) * 100) : 0;
   const profileUrl = fighterProfileUrl(fighter);
+  const publicProfileUrl = fighterPublicProfileUrl(fighter);
   return (
     <article className={`relative overflow-hidden rounded-xl border bg-white shadow-sm transition dark:bg-slate-900 ${selected ? 'border-red-600 ring-2 ring-red-100 dark:ring-red-950' : 'border-slate-200 dark:border-slate-800'}`}>
       <div className="flex items-center gap-2.5 p-2.5 pr-24 cursor-pointer" onClick={selectionMode ? onSelect : () => window.location.assign(profileUrl)}>
@@ -73,11 +76,12 @@ function FighterRosterCard({ fighter, medals, isLive, selected, selectionMode, o
         <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-red-600 bg-red-100 text-xs font-black text-red-700">{photo ? <img src={photo} alt="" className="h-full w-full object-cover" /> : name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2)}</div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <h3 className="font-combat truncate text-sm font-black uppercase">{name}</h3>
+            <h3 className="font-combat truncate text-sm font-black uppercase">{fullName} <span className="text-red-600">(#{nicknameTag})</span></h3>
             {isLive && <span className="animate-pulse rounded-full bg-red-600 px-1.5 py-0.5 text-[8px] font-black text-white">● LIVE</span>}
             <span className="rounded bg-red-50 px-1.5 py-0.5 text-[9px] font-black text-red-700 dark:bg-red-950 dark:text-red-300">{fighter.age || 0}yo</span>
           </div>
           <p className="truncate text-[11px] text-slate-500">{fighter.name || name} {fighter.school ? `· 🎓 ${fighter.school}` : ''}</p>
+          <a href={publicProfileUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} className="mt-0.5 block truncate text-[9px] font-semibold text-blue-600 hover:underline" title={publicProfileUrl}>{publicProfileUrl}</a>
           <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] font-black">
             <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-white">{fighter.wins || 0}W</span>
             <span className="rounded bg-rose-600 px-1.5 py-0.5 text-white">{fighter.losses || 0}L</span>
@@ -100,7 +104,7 @@ function FighterRosterCard({ fighter, medals, isLive, selected, selectionMode, o
       </div>
       {!selectionMode && (
         <div className="absolute right-2 top-2 flex items-center gap-0.5">
-          <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(); }} aria-label={`Edit ${name}`} title="Edit fighter" className="rounded-lg p-1.5 text-red-600 transition hover:bg-red-50 dark:hover:bg-red-950"><Pencil className="h-3.5 w-3.5" /></button>
+          <a href={`${profileUrl}?edit=1`} onClick={(event) => event.stopPropagation()} aria-label={`Edit profile for ${name}`} title="Edit profile on personal fighter page" className="rounded-lg p-1.5 text-red-600 transition hover:bg-red-50 dark:hover:bg-red-950"><Pencil className="h-3.5 w-3.5" /></a>
           <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(); }} aria-label={`Delete ${name}`} title="Delete fighter" className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"><Trash2 className="h-3.5 w-3.5" /></button>
           <button type="button" onClick={(e) => { e.stopPropagation(); onStar(); }} aria-label="Star fighter" className={`rounded-lg p-1.5 ${fighter.isStarred ? 'text-amber-500' : 'text-slate-300 hover:text-amber-500'}`}><Star className={`h-4 w-4 ${fighter.isStarred ? 'fill-current' : ''}`} /></button>
         </div>
@@ -230,10 +234,11 @@ export function AdminFightersPage({ fighters, fightRecords, liveCards, isLoading
         <button type="button" onClick={() => window.location.reload()} className="flex w-full items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-2.5 py-1.5 text-left text-[11px] font-bold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"><Cloud className="h-3.5 w-3.5" /><span className="flex-1">{isConnected ? 'Live cloud database connected' : 'Connecting to cloud database…'}</span><span className="text-[9px] font-black uppercase">Tap to refresh</span><RefreshCw className="h-3 w-3" /></button>
         <div className="flex gap-2"><StatCard label="Fighters" value={allFighters.length} icon="fighters" /><StatCard label="Total Wins" value={totals.wins} icon="wins" /><StatCard label="Win Rate" value={`${totals.fights ? Math.floor((totals.wins / totals.fights) * 100) : 0}%`} icon="rate" /></div>
         <div className="grid gap-2.5 md:grid-cols-2"><MedalDashboard counts={medalTotals} totalFights={totals.fights} /><FightRecordDashboard wins={totals.wins} losses={totals.losses} draws={totals.draws} /></div>
+        <section className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-blue-950 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-100"><div className="flex items-start gap-2.5"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-blue-600 text-white"><Link2 className="h-3.5 w-3.5" /></div><div><h2 className="text-xs font-black">Share the fighter’s personal profile link</h2><p className="mt-1 text-[10px] leading-relaxed opacity-80">Public links now use <span className="font-mono font-black">https://gomo-club.ai.studio/</span>. The pencil icon opens that fighter’s personal page in edit mode. Fighters opening the shared link must use the last 6 MyKad digits when a MyKad exists. If MyKad is blank, use the nickname key from the URL, for example <span className="font-mono font-black">arif-gomo</span>. Complete the blank fields and press Save profile.</p></div></div></section>
         <button type="button" data-testid="add-new-fighter" onClick={() => setEditor('new')} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:bg-red-700"><UserPlus className="h-3.5 w-3.5" /> + Add New Fighter</button>
         <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className="flex items-center gap-2.5"><Search className="h-4 w-4 text-red-600" /><div className="min-w-0 flex-1"><p className="text-[8px] font-black uppercase tracking-wider text-red-600">{query ? 'Searching for' : 'Search fighter database'}</p><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Enter name, nickname, school, or weight class…" className="mt-0.5 w-full bg-transparent text-xs font-semibold outline-none placeholder:text-slate-400" /></div>{query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><X className="h-3.5 w-3.5 text-slate-400" /></button>}</div></div>
         <div className="flex items-center justify-between gap-2"><p className="text-[11px] font-black uppercase text-slate-500">{visible.length} fighters</p><button type="button" onClick={() => { setSelectionMode((value) => !value); setSelected(new Set()); }} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-bold dark:border-slate-700"><Download className="h-3 w-3" />{selectionMode ? 'Cancel selection' : 'Export / Multi-select'}</button></div>
-        {isLoading && allFighters.length === 0 ? <div className="grid place-items-center py-12"><div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-red-600" /></div> : visible.length === 0 ? <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900">No fighters found</div> : <div className="space-y-2">{visible.map((fighter) => { const id = fighter.firestoreDocId || String(fighter.id); const recordId = String(fighter.id || id); return <FighterRosterCard key={id} fighter={fighter} medals={medalsByFighter.get(recordId) || { gold: 0, silver: 0, bronze: 0 }} isLive={liveIds.has(recordId)} selected={selected.has(id)} selectionMode={selectionMode} onSelect={() => setSelected((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; })} onStar={() => void toggleStar(fighter)} onEdit={() => setEditor(fighter)} onDelete={() => void deleteFighter(fighter)} />; })}</div>}
+        {isLoading && allFighters.length === 0 ? <div className="grid place-items-center py-12"><div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-red-600" /></div> : visible.length === 0 ? <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900">No fighters found</div> : <div className="space-y-2">{visible.map((fighter) => { const id = fighter.firestoreDocId || String(fighter.id); const recordId = String(fighter.id || id); return <FighterRosterCard key={id} fighter={fighter} medals={medalsByFighter.get(recordId) || { gold: 0, silver: 0, bronze: 0 }} isLive={liveIds.has(recordId)} selected={selected.has(id)} selectionMode={selectionMode} onSelect={() => setSelected((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; })} onStar={() => void toggleStar(fighter)} onDelete={() => void deleteFighter(fighter)} />; })}</div>}
       </main>
       {selectionMode && <div className="fixed inset-x-0 bottom-0 z-40 p-2"><div className="mx-auto flex max-w-4xl items-center gap-2.5 rounded-xl border border-red-200 bg-white p-2.5 shadow-2xl dark:border-red-900 dark:bg-slate-900"><div className="min-w-0 flex-1"><p className="text-[11px] font-black uppercase text-red-600">{selected.size ? `${selected.size} selected` : 'Export all'}</p><p className="text-[9px] text-slate-400">CSV fighter profiles</p></div><button type="button" onClick={() => setSelected(new Set(visible.map((fighter) => fighter.firestoreDocId || String(fighter.id))))} className="rounded-lg px-2.5 py-1.5 text-xs font-bold">Select all</button><button type="button" onClick={exportSelected} className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-black text-white"><Download className="h-3.5 w-3.5" /> Export ({selected.size || allFighters.length})</button></div></div>}
       {editor && <FighterEditorModal fighter={editor === 'new' ? undefined : editor} onDismiss={() => setEditor(null)} />}
