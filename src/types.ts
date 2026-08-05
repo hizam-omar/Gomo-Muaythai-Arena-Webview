@@ -23,9 +23,11 @@ export interface Bout {
   redName: string;
   redGym: string;
   redAvatar?: string;
+  redProfileUrl?: string;
   blueName: string;
   blueGym: string;
   blueAvatar?: string;
+  blueProfileUrl?: string;
   result: string;
   methodOrMedal: string;
   medal: string;
@@ -39,9 +41,28 @@ export interface Bout {
 
 export interface Fighter {
   id?: string | number;
+  firestoreDocId?: string;
   name?: string;
   nickname?: string;
+  nokp?: string;
+  dob?: string;
+  age?: number;
+  weightKg?: number;
+  heightCm?: number;
   club?: string;
+  manager?: string;
+  school?: string;
+  gradeClass?: string;
+  classTeacher?: string;
+  pkTeacher?: string;
+  parentName?: string;
+  parentPhone?: string;
+  parentEmail?: string;
+  ifmaLicense?: string;
+  stance?: string;
+  favTechnique?: string;
+  createdAt?: number;
+  updatedAt?: number;
   imageUri?: string;
   photoUrl?: string;
   avatarUrl?: string;

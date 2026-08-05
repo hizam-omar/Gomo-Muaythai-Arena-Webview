@@ -6,7 +6,9 @@ import { Navbar } from './components/Navbar';
 import { StatusBanner } from './components/StatusBanner';
 import { VictoryOverlay } from './components/VictoryOverlay';
 import { TournamentStandingsModal } from './components/TournamentStandingsModal';
+import { FighterProfilePage } from './components/FighterProfilePage';
 import { initFirebase } from './lib/firebase';
+import { fighterProfileUrl, fighterSlug } from './lib/fighter-profile';
 import type { Bout, Fighter, LiveFightCard, RoundScore } from './types';
 
 type FeedFilter = 'ALL' | 'LIVE' | 'WAITING' | 'COMPLETED';
@@ -219,6 +221,7 @@ function mapCard(
   if ((data.eventStatus || '').trim().toUpperCase() === 'COMPLETED') return null;
 
   const fighter = fighters[fighterId] || {};
+  const profileUrl = fighter.nickname || fighter.name ? fighterProfileUrl(fighter) : undefined;
   const fighterName = fighter.nickname?.trim() || fighter.name?.trim() || 'GOMO Fighter';
   const fighterClub = fighter.club?.trim() || 'Kelab Muaythai Gomo';
   const opponentName = data.opponentName?.trim() || 'Opponent';
@@ -243,6 +246,7 @@ function mapCard(
     const fname = (f.nickname || f.name || '').trim().toLowerCase();
     return fname && fname === opponentName.toLowerCase();
   });
+  const opponentProfileUrl = opponentFighter ? fighterProfileUrl(opponentFighter) : undefined;
   const oppCalcStreak = opponentFighter?.id ? calculatedStreaks?.get(asId(opponentFighter.id)) : undefined;
   const opponentExplicitStreak = opponentFighter
     ? (opponentFighter.winStreak ?? opponentFighter.streak ?? (oppCalcStreak && oppCalcStreak > 0 ? oppCalcStreak : undefined))
@@ -273,9 +277,11 @@ function mapCard(
     redName: isRed ? fighterName : opponentName,
     redGym: isRed ? fighterClub : opponentClub,
     redAvatar: isRed ? avatar : undefined,
+    redProfileUrl: isRed ? profileUrl : opponentProfileUrl,
     blueName: isRed ? opponentName : fighterName,
     blueGym: isRed ? opponentClub : fighterClub,
     blueAvatar: isRed ? undefined : avatar,
+    blueProfileUrl: isRed ? opponentProfileUrl : profileUrl,
     result: data.result?.trim().toUpperCase() || '',
     methodOrMedal: data.methodOrMedal?.trim() || '',
     medal: data.medal?.trim() || '',
@@ -377,8 +383,9 @@ export default function App() {
       snapshot.forEach((document) => {
         const data = document.data() as Fighter;
         const id = asId(data.id) || document.id;
-        next[id] = data;
-        next[document.id] = data;
+        const fighter = { ...data, firestoreDocId: document.id };
+        next[id] = fighter;
+        next[document.id] = fighter;
       });
       fightersReady = true;
       setFighters(next);
@@ -525,6 +532,22 @@ export default function App() {
   }, [bouts]);
 
   const dismissVictory = useCallback(() => setVictoryBout(null), []);
+
+  const requestedProfileSlug = decodeURIComponent(window.location.pathname.replace(/^\/+|\/+$/g, ''));
+  const requestedFighter = requestedProfileSlug
+    ? Object.values(fighters).find((fighter) => fighterSlug(fighter) === requestedProfileSlug)
+    : undefined;
+
+  if (requestedProfileSlug) {
+    return (
+      <FighterProfilePage
+        fighter={requestedFighter}
+        isLoading={isLoading}
+        theme={theme}
+        onToggleTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-red-600 selection:text-white dark:bg-slate-950 dark:text-slate-100">

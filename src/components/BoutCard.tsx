@@ -179,7 +179,7 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
           <div className="min-w-0">
             <p className="text-[8px] font-extrabold tracking-wider text-red-700 sm:text-[10px]">RED</p>
             <div className="flex items-center gap-1 min-w-0">
-              <h3 className="font-combat truncate text-[11px] font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.redName}</h3>
+              {bout.redProfileUrl ? <a href={bout.redProfileUrl} className="font-combat truncate text-[11px] font-black uppercase text-slate-900 underline decoration-red-300 decoration-2 underline-offset-2 hover:text-red-700 dark:text-white dark:hover:text-red-300 sm:text-base">{bout.redName}</a> : <h3 className="font-combat truncate text-[11px] font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.redName}</h3>}
               {bout.redWinStreak && bout.redWinStreak > 0 ? (
                 <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-orange-100 px-1 py-0.2 text-[8px] font-black text-orange-700 dark:bg-orange-950 dark:text-orange-300 ring-1 ring-orange-300 dark:ring-orange-800 sm:px-1.5 sm:py-0.5 sm:text-[9px]" title={`${bout.redWinStreak} Fight Win Streak`}>
                   <Flame className="h-2.5 w-2.5 fill-orange-500 text-orange-500 animate-pulse sm:h-3 sm:w-3" />
@@ -201,7 +201,7 @@ export function BoutCard({ bout }: { bout: Bout; key?: string }) {
           <div className="min-w-0">
             <p className="text-[8px] font-extrabold tracking-wider text-blue-700 sm:text-[10px]">BLUE</p>
             <div className="flex flex-row-reverse items-center justify-start gap-1 min-w-0">
-              <h3 className="font-combat truncate text-[11px] font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.blueName}</h3>
+              {bout.blueProfileUrl ? <a href={bout.blueProfileUrl} className="font-combat truncate text-[11px] font-black uppercase text-slate-900 underline decoration-blue-300 decoration-2 underline-offset-2 hover:text-blue-700 dark:text-white dark:hover:text-blue-300 sm:text-base">{bout.blueName}</a> : <h3 className="font-combat truncate text-[11px] font-black uppercase text-slate-900 dark:text-white sm:text-base">{bout.blueName}</h3>}
               {bout.blueWinStreak && bout.blueWinStreak > 0 ? (
                 <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-orange-100 px-1 py-0.2 text-[8px] font-black text-orange-700 dark:bg-orange-950 dark:text-orange-300 ring-1 ring-orange-300 dark:ring-orange-800 sm:px-1.5 sm:py-0.5 sm:text-[9px]" title={`${bout.blueWinStreak} Fight Win Streak`}>
                   <Flame className="h-2.5 w-2.5 fill-orange-500 text-orange-500 animate-pulse sm:h-3 sm:w-3" />
