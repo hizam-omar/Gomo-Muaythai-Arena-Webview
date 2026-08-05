@@ -72,6 +72,7 @@ export interface Fighter {
   wins?: number;
   losses?: number;
   draws?: number;
+  videoUrl?: string;
 }
 
 export interface FightRecord {

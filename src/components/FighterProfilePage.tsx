@@ -18,7 +18,7 @@ export type EditableFighter = Required<Pick<Fighter,
   'name' | 'nickname' | 'nokp' | 'dob' | 'age' | 'weightKg' | 'heightCm' |
   'wins' | 'losses' | 'draws' | 'club' | 'manager' | 'school' | 'gradeClass' |
   'classTeacher' | 'pkTeacher' | 'parentName' | 'parentPhone' | 'parentEmail' |
-  'ifmaLicense' | 'stance' | 'favTechnique' | 'imageUri'>>;
+  'ifmaLicense' | 'stance' | 'favTechnique' | 'imageUri' | 'videoUrl'>>;
 
 const MASK = '********';
 
@@ -34,6 +34,7 @@ export function editableValues(fighter: Fighter): EditableFighter {
     parentPhone: fighter.parentPhone || '', parentEmail: fighter.parentEmail || '',
     ifmaLicense: fighter.ifmaLicense || '', stance: fighter.stance || 'Orthodox',
     favTechnique: fighter.favTechnique || 'Knee Strike', imageUri: fighter.imageUri || fighter.photoUrl || fighter.avatarUrl || '',
+    videoUrl: fighter.videoUrl || '',
   };
 }
 
@@ -78,6 +79,30 @@ function publicAvatar(fighter: Fighter): string | undefined {
   if (!value || /^(content:|file:|\/)/i.test(value)) return undefined;
   if (value.startsWith('data:image') || value.length > 200) return value.startsWith('data:image') ? value : `data:image/jpeg;base64,${value}`;
   return value;
+}
+
+function getEmbedVideoUrl(url?: string): { type: 'youtube' | 'tiktok' | 'video' | 'link'; src: string; videoId?: string } | null {
+  if (!url) return null;
+  const trimmed = url.trim();
+  const ytMatch = trimmed.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    return { type: 'youtube', src: `https://www.youtube.com/embed/${ytMatch[1]}` };
+  }
+  if (trimmed.includes('youtube.com/embed/')) {
+    return { type: 'youtube', src: trimmed };
+  }
+  const tiktokMatch = trimmed.match(/(?:tiktok\.com\/@[\w.-]+\/video\/(\d+)|vm\.tiktok\.com\/([A-Za-z0-9]+)|tiktok\.com\/v\/(\d+))/i);
+  if (tiktokMatch) {
+    const videoId = tiktokMatch[1] || tiktokMatch[3];
+    if (videoId) {
+      return { type: 'tiktok', src: `https://www.tiktok.com/embed/v2/${videoId}`, videoId };
+    }
+    return { type: 'tiktok', src: trimmed, videoId: tiktokMatch[2] };
+  }
+  if (/\.(mp4|webm|ogg|mov)$/i.test(trimmed) || trimmed.startsWith('blob:') || trimmed.startsWith('data:video')) {
+    return { type: 'video', src: trimmed };
+  }
+  return { type: 'link', src: trimmed };
 }
 
 function Field({ label, value, editing, type = 'text', onChange, options }: {
@@ -215,7 +240,7 @@ export function ProfileEditor({ form, onText, onNumber, onPhoto, photoError, pho
       </EditSection>
 
       <EditSection number={3} title="School & Contact Info">
-        <EditInput label="School" value={form.school} onChange={onText('school')} /><EditInput label="Form / Class" value={form.gradeClass} onChange={onText('gradeClass')} /><EditInput label="Class Teacher" value={form.classTeacher} onChange={onText('classTeacher')} /><EditInput label="Senior Assistant (Academic)" value={form.pkTeacher} onChange={onText('pkTeacher')} /><EditInput label="Club / Gym Name" value={form.club} onChange={onText('club')} /><EditInput label="Manager Contact" value={form.manager} onChange={onText('manager')} />
+        <EditInput label="School" value={form.school} onChange={onText('school')} /><EditInput label="Form / Class" value={form.gradeClass} onChange={onText('gradeClass')} /><EditInput label="Class Teacher" value={form.classTeacher} onChange={onText('classTeacher')} /><EditInput label="Senior Assistant (Academic)" value={form.pkTeacher} onChange={onText('pkTeacher')} /><EditInput label="Club / Gym Name" value={form.club} onChange={onText('club')} /><EditInput label="Manager Contact" value={form.manager} onChange={onText('manager')} /><EditInput label="Highlight / Fight Video URL (YouTube, MP4, etc.)" value={form.videoUrl} onChange={onText('videoUrl')} placeholder="https://www.youtube.com/watch?v=..." />
       </EditSection>
 
       <EditSection number={4} title="Parent / Guardian Info" optional>
@@ -354,6 +379,47 @@ export function FighterProfilePage({ fighter, isLoading, theme, onToggleTheme }:
             <Section eyebrow="Academic info" title="School & Academic Specs"><Field label="School" value={form.school} editing={false} /><Field label="Form / Class" value={form.gradeClass} editing={false} /><Field label="Class Teacher" value={form.classTeacher} editing={false} /><Field label="Senior Assistant (Academic)" value={form.pkTeacher} editing={false} /></Section>
             <Section eyebrow="Parent / guardian info" title="Parent & Emergency Contact"><Field label="Parent Name" value={form.parentName} editing={false} /><Field label="Parent H/P No." value={adminMode ? form.parentPhone : MASK} editing={false} /><Field label="Parent Email" value={adminMode ? form.parentEmail : MASK} editing={false} /></Section>
             <Section eyebrow="Official club" title="Club & Management"><Field label="Club" value={form.club} editing={false} /><Field label="Manager" value={form.manager} editing={false} /></Section>
+            {form.videoUrl && (() => {
+              const embed = getEmbedVideoUrl(form.videoUrl);
+              if (!embed) return null;
+              return (
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <header className="border-b border-slate-100 px-4 py-3 dark:border-slate-800 sm:px-5">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-red-600">Fighter Highlight</p>
+                    <h2 className="font-combat mt-0.5 text-lg font-black uppercase text-slate-900 dark:text-white">Match & Training Footage</h2>
+                  </header>
+                  <div className="p-4 sm:p-5">
+                    {embed.type === 'youtube' && (
+                      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-slate-950">
+                        <iframe src={embed.src} title={`${form.nickname || form.name} highlight video`} className="absolute inset-0 h-full w-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                      </div>
+                    )}
+                    {embed.type === 'tiktok' && (
+                      <div className="space-y-3">
+                        {embed.videoId ? (
+                          <div className="relative aspect-[9/16] max-h-[500px] w-full overflow-hidden rounded-xl bg-slate-950 mx-auto max-w-[320px]">
+                            <iframe src={embed.src} title={`${form.nickname || form.name} TikTok video`} className="absolute inset-0 h-full w-full border-0" allow="encrypted-media" allowFullScreen />
+                          </div>
+                        ) : null}
+                        <div className="text-center">
+                          <a href={form.videoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-3 text-sm font-black text-white hover:bg-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700">
+                            Watch TikTok Video ↗
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    {embed.type === 'video' && (
+                      <video src={embed.src} controls className="w-full rounded-xl bg-slate-950 object-cover" />
+                    )}
+                    {embed.type === 'link' && (
+                      <a href={embed.src} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-black text-white hover:bg-red-700">
+                        Watch Highlight Video ↗
+                      </a>
+                    )}
+                  </div>
+                </section>
+              );
+            })()}
           </>
         )}
         <p className="pb-5 text-center text-[11px] font-semibold text-slate-400">Last updated: {updatedLabel}</p>
