@@ -22,5 +22,6 @@ export function fighterWeightCategory(weight = 0): string {
   if (weight <= 50) return 'Bantamweight (43–50kg)';
   if (weight <= 57) return 'Featherweight (51–57kg)';
   if (weight <= 65) return 'Lightweight (58–65kg)';
-  return 'Middleweight (>65kg)';
+  if (weight <= 71) return 'Welterweight (66–71kg)';
+  return 'Middleweight (>71kg)';
 }
