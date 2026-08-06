@@ -149,7 +149,7 @@ function EditInput({ label, value, onChange, type = 'text', required = false, pl
 }) {
   const shouldUppercase = uppercase ?? type === 'text';
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="mb-1 block text-[12px] font-bold text-slate-600 dark:text-slate-300">{label}{required && <span className="text-red-600"> *</span>}</span>
       <input
         type={type}
@@ -305,23 +305,27 @@ export function ProfileEditor({ form, onText, onNumber, onPhoto, photoError, pho
       </EditSection>
 
       <EditSection number={2} title="Physical Specs & Stance">
-        <EditInput label="Weight (kg)" type="number" value={form.weightKg} onChange={onNumber('weightKg')} />
-        <EditInput label="Height (cm)" type="number" value={form.heightCm} onChange={onNumber('heightCm')} />
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">Stance</span>
-          <select value={form.stance} onChange={(e) => onText('stance')(e.target.value)} className="h-9 w-full rounded-[10px] border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white">
-            <option value="Orthodox">Orthodox</option>
-            <option value="Southpaw">Southpaw</option>
-            <option value="Switch">Switch</option>
-          </select>
-        </label>
-        <EditInput label="Favorite Technique" value={form.favTechnique} onChange={onText('favTechnique')} />
+        <div className="grid grid-cols-2 gap-3">
+          <EditInput label="Weight (kg)" type="number" value={form.weightKg} onChange={onNumber('weightKg')} />
+          <EditInput label="Height (cm)" type="number" value={form.heightCm} onChange={onNumber('heightCm')} />
+          <label className="block min-w-0">
+            <span className="mb-1 block text-[12px] font-bold text-slate-600 dark:text-slate-300">Stance</span>
+            <select value={form.stance} onChange={(e) => onText('stance')(e.target.value)} className="h-9 w-full min-w-0 rounded-[10px] border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white">
+              <option value="Orthodox">Orthodox</option>
+              <option value="Southpaw">Southpaw</option>
+              <option value="Switch">Switch</option>
+            </select>
+          </label>
+          <EditInput label="Favorite Technique" value={form.favTechnique} onChange={onText('favTechnique')} />
+        </div>
       </EditSection>
 
       <EditSection number={3} title="Official Fight Record">
-        <EditInput label="Wins" type="number" value={form.wins} onChange={onNumber('wins')} />
-        <EditInput label="Losses" type="number" value={form.losses} onChange={onNumber('losses')} />
-        <EditInput label="Draws" type="number" value={form.draws} onChange={onNumber('draws')} />
+        <div className="grid grid-cols-3 gap-3">
+          <EditInput label="Wins" type="number" value={form.wins} onChange={onNumber('wins')} />
+          <EditInput label="Losses" type="number" value={form.losses} onChange={onNumber('losses')} />
+          <EditInput label="Draws" type="number" value={form.draws} onChange={onNumber('draws')} />
+        </div>
       </EditSection>
 
       <EditSection number={4} title="Academic Information" optional>
