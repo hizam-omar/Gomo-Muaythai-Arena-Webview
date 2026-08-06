@@ -136,7 +136,7 @@ export function CompletedBoutsSection({ bouts, isEventFullyCompleted, availableR
           <button
             type="button"
             onClick={() => setShowSortDropdown(!showSortDropdown)}
-            className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-3xs hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition touch-manipulation min-w-[44px]"
+            className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-700 shadow-3xs hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition touch-manipulation min-w-[44px]"
             aria-label="Sort completed bouts"
             aria-haspopup="listbox"
             aria-expanded={showSortDropdown}
@@ -158,7 +158,7 @@ export function CompletedBoutsSection({ bouts, isEventFullyCompleted, availableR
                       setSortOption(option);
                       setShowSortDropdown(false);
                     }}
-                    className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition ${
+                    className={`w-full text-left px-3 py-2 text-[12px] font-semibold rounded-lg transition ${
                       sortOption === option
                         ? 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400'
                         : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'

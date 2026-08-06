@@ -105,6 +105,19 @@ textarea {
   font: inherit;
 }
 
+/* Keep interactive labels readable on compact mobile screens. */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea,
+  option,
+  [role="menuitem"],
+  [role="option"],
+  [role="tab"] {
+    font-size: max(12px, 1em) !important;
+  }
+}
+
 .font-combat {
   font-family: var(--font-combat);
   font-stretch: semi-condensed;
