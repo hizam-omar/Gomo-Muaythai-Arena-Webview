@@ -1,18 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { collection, onSnapshot } from 'firebase/firestore';
-import { BoutCard } from './components/BoutCard';
-import { Navbar } from './components/Navbar';
-import { StatusBanner } from './components/StatusBanner';
-import { VictoryOverlay } from './components/VictoryOverlay';
-import { TournamentStandingsModal } from './components/TournamentStandingsModal';
-import { FighterProfilePage } from './components/FighterProfilePage';
 import { AdminFightersPage } from './components/AdminFightersPage';
+import { BoutCard } from './components/BoutCard';
+import { BoutSectionHeader } from './components/BoutSectionHeader';
+import { CollapsedLiveEventBar } from './components/CollapsedLiveEventBar';
+import { EmptyBoutsState } from './components/EmptyBoutsState';
+import { EventInfoSheet } from './components/EventInfoSheet';
+import { FighterProfilePage } from './components/FighterProfilePage';
+import { FighterSearch } from './components/FighterSearch';
+import { Navbar } from './components/Navbar';
+import { PullToRefresh } from './components/PullToRefresh';
+import { StatusBanner } from './components/StatusBanner';
+import { TournamentStandingsModal } from './components/TournamentStandingsModal';
+import { VictoryOverlay } from './components/VictoryOverlay';
+import { CompletedBoutsSection } from './components/CompletedBoutsSection';
 import { initFirebase } from './lib/firebase';
 import { fighterProfileUrl, fighterSlug } from './lib/fighter-profile';
 import type { Bout, FightRecord, Fighter, LiveFightCard, RoundScore } from './types';
 
-type FeedFilter = 'ALL' | 'LIVE' | 'WAITING' | 'COMPLETED';
+type FeedFilter = 'ALL' | 'LIVE' | 'UP_NEXT' | 'WAITING' | 'COMPLETED';
 type Theme = 'light' | 'dark';
 type MedalFilter = 'GOLD' | 'SILVER' | 'BRONZE' | null;
 
@@ -42,7 +49,6 @@ function playVictorySound() {
 
   const now = context.currentTime;
 
-  // Synthesized crowd roar: filtered noise with a natural swell and fade.
   const cheerDuration = 3.8;
   const cheerBuffer = context.createBuffer(2, Math.floor(context.sampleRate * cheerDuration), context.sampleRate);
   for (let channel = 0; channel < cheerBuffer.numberOfChannels; channel += 1) {
@@ -72,7 +78,6 @@ function playVictorySound() {
   cheerSource.start(now);
   cheerSource.stop(now + cheerDuration);
 
-  // Short bursts give the crowd texture similar to clapping.
   [0.18, 0.34, 0.52, 0.74, 0.98, 1.25, 1.58, 1.92, 2.28].forEach((offset) => {
     const clapDuration = 0.075;
     const clapBuffer = context.createBuffer(1, Math.floor(context.sampleRate * clapDuration), context.sampleRate);
@@ -92,7 +97,6 @@ function playVictorySound() {
     clap.start(now + offset);
   });
 
-  // Two quick whistles sit above the roar without overpowering the chime.
   [0.45, 1.15].forEach((offset, index) => {
     const whistle = context.createOscillator();
     const whistleGain = context.createGain();
@@ -108,7 +112,6 @@ function playVictorySound() {
     whistle.stop(start + 0.55);
   });
 
-  // Rising victory chord, matching the notification-like Android cue.
   [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
     const oscillator = context.createOscillator();
     const gain = context.createGain();
@@ -147,55 +150,66 @@ function completedCategoryPriority(medal: string, result: string): number {
   if (value.includes('GOLD')) return 0;
   if (value.includes('SILVER')) return 1;
   if (value.includes('BRONZE')) return 2;
-  if (result.trim().toUpperCase() === 'WIN') return 3;
-  if (result.trim().toUpperCase() === 'LOSS') return 4;
-  if (result.trim().toUpperCase() === 'DRAW') return 5;
-  return 6;
+  const res = result.trim().toUpperCase();
+  if (res === 'WIN') return 3;
+  if (res === 'DRAW') return 4;
+  return 5;
 }
 
-function scoreParts(value?: string): [string, string] | null {
-  if (!value?.trim()) return null;
-  const parts = value.split(/[-/:,]/).map((part) => part.trim());
-  return parts.length >= 2 && parts[0] !== '' && parts[1] !== ''
-    ? [parts[0], parts[1]]
-    : null;
-}
-
-function mapRoundScores(data: LiveFightCard, gomoIsRed: boolean): RoundScore[] {
-  const values = [data.r1Score, data.r2Score, data.r3Score, data.r4Score, data.r5Score];
-  return values.flatMap((value, index) => {
-    const parts = scoreParts(value);
-    if (!parts) return [];
-    return [{
-      round: `R${index + 1}`,
-      red: gomoIsRed ? parts[0] : parts[1],
-      blue: gomoIsRed ? parts[1] : parts[0],
-    }];
-  });
-}
-
-function usableAvatar(fighter: Fighter): string | undefined {
-  const avatar = fighter.imageUri || fighter.photoUrl || fighter.avatarUrl;
-  if (!avatar) return undefined;
-
-  // Local Android content/file paths cannot be read by a remotely hosted page.
-  // Newer app photos are data URLs and work in both Android and the web.
-  if (/^(content:|file:|\/)/i.test(avatar)) return undefined;
-  if (avatar.startsWith('data:image') || avatar.length > 200) {
-    return avatar.startsWith('data:image') ? avatar : `data:image/jpeg;base64,${avatar}`;
+function mapRoundScores(card: LiveFightCard, isRed: boolean): RoundScore[] {
+  if (Array.isArray(card.rounds) && card.rounds.length > 0) {
+    return card.rounds.map((round, idx) => ({
+      round: round.round ? String(round.round) : `R${idx + 1}`,
+      red: isRed ? String(round.red || '0') : String(round.blue || '0'),
+      blue: isRed ? String(round.blue || '0') : String(round.red || '0'),
+    }));
   }
-  return avatar;
+
+  const result: RoundScore[] = [];
+  const entries: Array<[string | undefined, string]> = [
+    [card.r1Score, 'R1'],
+    [card.r2Score, 'R2'],
+    [card.r3Score, 'R3'],
+    [card.r4Score, 'R4'],
+    [card.r5Score, 'R5'],
+  ];
+
+  for (const [score, label] of entries) {
+    if (!score || !score.includes('-')) continue;
+    const parts = score.split('-').map((s) => s.trim());
+    if (parts.length === 2) {
+      result.push({
+        round: label,
+        red: isRed ? parts[0] : parts[1],
+        blue: isRed ? parts[1] : parts[0],
+      });
+    }
+  }
+
+  return result;
+}
+
+function scoreParts(score?: string): [string, string] | null {
+  if (!score || !score.includes('-')) return null;
+  const parts = score.split('-').map((s) => s.trim());
+  if (parts.length !== 2) return null;
+  return [parts[0], parts[1]];
+}
+
+function usableAvatar(fighter?: Fighter): string | undefined {
+  if (!fighter) return undefined;
+  const src = fighter.photoUrl || fighter.avatarUrl || fighter.imageUri;
+  return src && src.trim() ? src.trim() : undefined;
 }
 
 function computeCalculatedStreaks(cards: LiveFightCard[]): Map<string, number> {
+  const sorted = [...cards].sort((a, b) => (Number(a.completedAt) || Number(a.timestamp) || 0) - (Number(b.completedAt) || Number(b.timestamp) || 0));
   const map = new Map<string, number>();
-  const completed = cards
-    .filter((c) => ['COMPLETED', 'FINISHED'].includes((c.status || '').toUpperCase()))
-    .sort((a, b) => (Number(b.completedAt) || Number(b.timestamp) || 0) - (Number(a.completedAt) || Number(a.timestamp) || 0));
 
-  for (const card of completed) {
+  for (const card of sorted) {
     const fid = asId(card.fighterId);
     if (!fid) continue;
+    if ((card.status || '').toUpperCase() !== 'COMPLETED') continue;
     if (map.get(fid) === -1) continue;
     const res = (card.result || '').toUpperCase();
     if (res === 'WIN') {
@@ -216,8 +230,6 @@ function mapCard(
   const fighterId = asId(data.fighterId);
   const rawStatus = (data.status || '').trim().toUpperCase();
 
-  // Keep completed bouts visible while their event remains active. They are
-  // removed only after the whole event's eventStatus becomes Completed.
   if (!fighterId || !['LIVE', 'UPCOMING', 'WAITING', 'COMPLETED', 'FINISHED'].includes(rawStatus)) return null;
   if ((data.eventStatus || '').trim().toUpperCase() === 'COMPLETED') return null;
 
@@ -306,18 +318,33 @@ export default function App() {
   const [fightRecords, setFightRecords] = useState<FightRecord[]>([]);
   const [fighters, setFighters] = useState<Record<string, Fighter>>({});
   const [filter, setFilter] = useState<FeedFilter>('ALL');
+  const [selectedRing, setSelectedRing] = useState<string>('ALL');
   const [fighterSearch, setFighterSearch] = useState('');
   const [medalFilter, setMedalFilter] = useState<MedalFilter>(null);
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [victoryBout, setVictoryBout] = useState<Bout | null>(null);
   const [showStandings, setShowStandings] = useState(false);
+  const [showEventInfoSheet, setShowEventInfoSheet] = useState(false);
+  const [isStickyBarVisible, setIsStickyBarVisible] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('gomo-live-notifications-enabled') === 'true';
+  });
+  const [hasSetDefaultFilter, setHasSetDefaultFilter] = useState(false);
   const previousBoutStates = useRef<Map<string, string>>(new Map());
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     window.localStorage.setItem('gomo-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsStickyBarVisible(window.scrollY > 220);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const android = (window as Window & { Android?: { getBoutsJson?: () => string } }).Android;
@@ -467,9 +494,41 @@ export default function App() {
       || bridgeBouts[0]?.eventName
       || '';
   }, [isFirebaseConnected, rawCards, bridgeBouts]);
-  const bouts = useMemo(() => sourceBouts.filter((bout) => activeEventName !== ''
-    && bout.eventName.localeCompare(activeEventName, undefined, { sensitivity: 'accent' }) === 0),
-  [sourceBouts, activeEventName]);
+
+  const bouts = useMemo(() => {
+    const rawList = sourceBouts.filter((bout) => activeEventName !== ''
+      && bout.eventName.localeCompare(activeEventName, undefined, { sensitivity: 'accent' }) === 0);
+
+    const waitingCounter: Record<string, number> = {};
+
+    return rawList.map((bout) => {
+      if (bout.status === 'WAITING') {
+        const rKey = bout.ring || 'default';
+        const order = (waitingCounter[rKey] || 0) + 1;
+        waitingCounter[rKey] = order;
+        return {
+          ...bout,
+          waitOrder: order,
+          isUpNext: order === 1,
+        };
+      }
+      return bout;
+    });
+  }, [sourceBouts, activeEventName]);
+
+  // Automatically default filter to LIVE if any bouts are actively live or up next, otherwise COMPLETED
+  useEffect(() => {
+    if (!isLoading && !hasSetDefaultFilter && bouts.length > 0) {
+      const hasLiveOrNext = bouts.some((b) => b.status === 'LIVE' || b.isUpNext);
+      if (hasLiveOrNext) {
+        setFilter('LIVE');
+      } else {
+        setFilter('COMPLETED');
+      }
+      setHasSetDefaultFilter(true);
+    }
+  }, [isLoading, bouts, hasSetDefaultFilter]);
+
   const activeEventDetails = useMemo(() => {
     const activeCard = rawCards.find((card) => card.eventName?.trim() === activeEventName
       && (card.eventStatus || '').trim().toUpperCase() === 'ACTIVE');
@@ -480,9 +539,21 @@ export default function App() {
       endDate: activeCard?.endDate?.trim() || activeBout?.endDate || '',
     };
   }, [rawCards, activeEventName, bouts]);
+
+  const availableRings = useMemo(() => {
+    return Array.from(new Set(bouts.map((b) => b.ring).filter((r) => Boolean(r && r.trim()))));
+  }, [bouts]);
+
   const normalizedSearch = fighterSearch.trim().toLocaleLowerCase();
   const filteredBouts = bouts.filter((bout) => {
-    const matchesStatus = filter === 'ALL' || bout.status === filter;
+    const matchesRing = selectedRing === 'ALL' || bout.ring === selectedRing;
+
+    let matchesStatus = true;
+    if (filter === 'LIVE') matchesStatus = bout.status === 'LIVE';
+    else if (filter === 'UP_NEXT') matchesStatus = Boolean(bout.isUpNext);
+    else if (filter === 'WAITING') matchesStatus = bout.status === 'WAITING' && !bout.isUpNext;
+    else if (filter === 'COMPLETED') matchesStatus = bout.status === 'COMPLETED';
+
     const matchesFighter = normalizedSearch === '' || [
       bout.redName,
       bout.blueName,
@@ -491,12 +562,17 @@ export default function App() {
       bout.eventName,
       bout.boutNumber,
     ].some((value) => value.toLocaleLowerCase().includes(normalizedSearch));
+
     const matchesMedal = medalFilter === null || bout.medal.toUpperCase().includes(medalFilter);
-    return matchesStatus && matchesFighter && matchesMedal;
+
+    return matchesRing && matchesStatus && matchesFighter && matchesMedal;
   });
+
   const liveCount = bouts.filter((bout) => bout.status === 'LIVE').length;
-  const waitingCount = bouts.filter((bout) => bout.status === 'WAITING').length;
+  const upNextCount = bouts.filter((bout) => bout.isUpNext).length;
+  const waitingCount = bouts.filter((bout) => bout.status === 'WAITING' && !bout.isUpNext).length;
   const completedCount = bouts.filter((bout) => bout.status === 'COMPLETED').length;
+
   const medalCounts = useMemo(() => bouts.reduce((counts, bout) => {
     if (bout.status !== 'COMPLETED') return counts;
     const medal = bout.medal.trim().toUpperCase();
@@ -515,8 +591,6 @@ export default function App() {
 
   useEffect(() => {
     const previous = previousBoutStates.current;
-
-    // Seed the first received snapshot without replaying historical wins.
     if (previous.size === 0) {
       bouts.forEach((bout) => previous.set(bout.id, `${bout.status}:${bout.result}`));
       return;
@@ -530,6 +604,15 @@ export default function App() {
         && bout.result === 'WIN';
     });
 
+    const newlyLiveBout = bouts.find((bout) => {
+      const oldState = previous.get(bout.id);
+      if (oldState !== undefined) {
+        const [oldStatus] = oldState.split(':');
+        return oldStatus !== 'LIVE' && bout.status === 'LIVE';
+      }
+      return false;
+    });
+
     previous.clear();
     bouts.forEach((bout) => previous.set(bout.id, `${bout.status}:${bout.result}`));
 
@@ -538,9 +621,60 @@ export default function App() {
       launchVictoryConfetti();
       playVictorySound();
     }
+
+    if (newlyLiveBout) {
+      const enabled = localStorage.getItem('gomo-live-notifications-enabled') === 'true';
+      if (enabled && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('Live Fight Started! 🥊', {
+          body: `${newlyLiveBout.redName} vs ${newlyLiveBout.blueName} is now LIVE in ${newlyLiveBout.ring || 'the ring'}!`,
+        });
+      }
+    }
   }, [bouts]);
 
   const dismissVictory = useCallback(() => setVictoryBout(null), []);
+
+  const handleManualRefresh = useCallback(async () => {
+    const android = (window as Window & { Android?: { getBoutsJson?: () => string } }).Android;
+    if (android?.getBoutsJson) {
+      try {
+        const parsed = JSON.parse(android.getBoutsJson());
+        if (Array.isArray(parsed)) {
+          const active = parsed
+            .filter((bout) => ['LIVE', 'UPCOMING', 'WAITING', 'COMPLETED', 'FINISHED'].includes(String(bout.status).toUpperCase()))
+            .map((bout) => ({
+              ...bout,
+              id: asId(bout.id),
+              fighterId: asId(bout.fighterId),
+              status: String(bout.status).toUpperCase() === 'LIVE'
+                ? 'LIVE'
+                : ['COMPLETED', 'FINISHED'].includes(String(bout.status).toUpperCase()) ? 'COMPLETED' : 'WAITING',
+              gomoCorner: String(bout.corner).toUpperCase() === 'BLUE' ? 'BLUE' : 'RED',
+              eventName: bout.eventName || 'Fight Event',
+              startDate: String(bout.startDate || '').trim(),
+              endDate: String(bout.endDate || '').trim(),
+              location: String(bout.location || '').trim(),
+              eventType: bout.eventType || 'Normal Event',
+              tournamentRound: bout.tournamentRound || '',
+              ring: bout.ring || '',
+              weightCategory: bout.weightCategory || '',
+              result: String(bout.result || '').trim().toUpperCase(),
+              methodOrMedal: bout.methodOrMedal || '',
+              medal: bout.medal || '',
+              rounds: Array.isArray(bout.rounds) ? bout.rounds : [],
+              redPoints: bout.redPoints === undefined ? '' : String(bout.redPoints),
+              bluePoints: bout.bluePoints === undefined ? '' : String(bout.bluePoints),
+              timestamp: Number(bout.completedAt) || Number(bout.timestamp) || 0,
+            })) as Bout[];
+          setBridgeBouts(active);
+        }
+      } catch (error) {
+        console.error('Android bridge refresh error:', error);
+      }
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 650));
+  }, []);
 
   const requestedProfileSlug = decodeURIComponent(window.location.pathname.replace(/^\/+|\/+$/g, ''));
   const requestedFighter = requestedProfileSlug
@@ -555,12 +689,42 @@ export default function App() {
     return (
       <FighterProfilePage
         fighter={requestedFighter}
+        fightRecords={fightRecords}
         isLoading={isLoading}
         theme={theme}
         onToggleTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
       />
     );
   }
+
+  // Section grouping arrays for ALL view mode
+  const liveList = filteredBouts.filter((b) => b.status === 'LIVE');
+  const upNextList = filteredBouts.filter((b) => b.isUpNext);
+  const waitingList = filteredBouts.filter((b) => b.status === 'WAITING' && !b.isUpNext);
+  const completedList = filteredBouts.filter((b) => b.status === 'COMPLETED');
+
+  const showSectionedAllView = filter === 'ALL' && normalizedSearch === '' && medalFilter === null;
+
+  const completedBoutsForSection = useMemo(() => {
+    return bouts.filter((bout) => {
+      if (bout.status !== 'COMPLETED') return false;
+
+      // respect ring filter
+      const matchesRing = selectedRing === 'ALL' || bout.ring === selectedRing;
+
+      // respect search filter
+      const matchesFighter = normalizedSearch === '' || [
+        bout.redName,
+        bout.blueName,
+        bout.redGym,
+        bout.blueGym,
+        bout.eventName,
+        bout.boutNumber,
+      ].some((value) => value.toLocaleLowerCase().includes(normalizedSearch));
+
+      return matchesRing && matchesFighter;
+    });
+  }, [bouts, selectedRing, normalizedSearch]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-red-600 selection:text-white dark:bg-slate-950 dark:text-slate-100">
@@ -569,56 +733,133 @@ export default function App() {
         onToggleTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
       />
 
-      <main className="mx-auto w-full max-w-4xl flex-grow px-2 py-2.5 sm:px-4 sm:py-6">
-        <StatusBanner
-          eventName={activeEventName}
-          eventLocation={activeEventDetails.location}
-          eventStartDate={activeEventDetails.startDate}
-          eventEndDate={activeEventDetails.endDate}
-          liveCount={liveCount}
-          waitingCount={waitingCount}
-          completedCount={completedCount}
-          goldCount={medalCounts.gold}
-          silverCount={medalCounts.silver}
-          bronzeCount={medalCounts.bronze}
-          isFirebaseConnected={isFirebaseConnected}
-          onOpenStandings={() => setShowStandings(true)}
-          currentFilter={filter}
-          onSelectFilter={(value) => {
-            setFilter(value);
-            setMedalFilter(null);
-          }}
-          selectedMedal={medalFilter}
-          onSelectMedal={(medal) => {
-            setMedalFilter((current) => current === medal ? null : medal);
-            setFilter('COMPLETED');
-          }}
-        />
+      <CollapsedLiveEventBar
+        isVisible={isStickyBarVisible}
+        liveCount={liveCount}
+        location={activeEventDetails.location}
+        onOpenStandings={() => setShowStandings(true)}
+        onOpenEventInfo={() => setShowEventInfoSheet(true)}
+        onScrollToTop={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      />
 
-        <div className="space-y-2 sm:space-y-3" aria-live="polite">
-          {isLoading && bouts.length === 0 ? (
-            <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="mx-auto mb-3 h-6 w-6 rounded-full border-2 border-slate-200 border-t-red-600 animate-spin" />
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Loading active fighters…</p>
-            </div>
-          ) : filteredBouts.length === 0 ? (
-            <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <p className="text-sm font-semibold text-slate-700 mb-1 dark:text-slate-200">
-                {!activeEventName
-                  ? 'No active event'
-                  : normalizedSearch
-                    ? `No fighter found for “${fighterSearch.trim()}”`
-                    : medalFilter ? `No ${medalFilter.toLowerCase()} medal winners yet`
-                      : `No ${filter === 'ALL' ? 'bouts for the active event' : `${filter.toLowerCase()} bouts`}`}
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {!activeEventName
-                  ? 'Bouts and tournament standings will appear when an event status changes to Active.'
-                  : normalizedSearch ? 'Try another fighter or opponent name.' : 'The list updates automatically when a bout changes in the GOMO app.'}
-              </p>
-            </div>
-          ) : filteredBouts.map((bout) => <BoutCard key={bout.id} bout={bout} />)}
-        </div>
+      <main className="mx-auto w-full max-w-4xl flex-grow px-2 py-2.5 sm:px-4 sm:py-6">
+        <PullToRefresh onRefresh={handleManualRefresh}>
+          {Boolean(activeEventName && bouts.length > 0) && (
+            <StatusBanner
+              eventName={activeEventName}
+              eventLocation={activeEventDetails.location}
+              eventStartDate={activeEventDetails.startDate}
+              eventEndDate={activeEventDetails.endDate}
+              liveCount={liveCount}
+              upNextCount={upNextCount}
+              waitingCount={waitingCount}
+              completedCount={completedCount}
+              goldCount={medalCounts.gold}
+              silverCount={medalCounts.silver}
+              bronzeCount={medalCounts.bronze}
+              isFirebaseConnected={isFirebaseConnected}
+              onOpenStandings={() => setShowStandings(true)}
+              onOpenEventInfo={() => setShowEventInfoSheet(true)}
+              currentFilter={filter}
+              onSelectFilter={(value) => {
+                setFilter(value);
+              }}
+              onSyncNow={handleManualRefresh}
+            />
+          )}
+
+
+
+          <div className="space-y-3" aria-live="polite">
+            {isLoading && bouts.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                <div className="mx-auto mb-3 h-6 w-6 rounded-full border-2 border-slate-200 border-t-red-600 animate-spin" />
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Loading live bouts feed…</p>
+              </div>
+            ) : filter === 'LIVE' && liveCount === 0 ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-6 text-center shadow-xs dark:border-amber-950 dark:bg-amber-950/40">
+                <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-600 animate-ping" />
+                </div>
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">No bout is live right now</h3>
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 max-w-sm mx-auto">
+                  The next bout is preparing to enter the ring shortly. View upcoming bouts or all schedule items.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFilter('UP_NEXT')}
+                  className="mt-3.5 inline-flex h-9 items-center justify-center rounded-xl bg-amber-500 px-4 text-xs font-extrabold text-amber-950 shadow-xs hover:bg-amber-400 transition"
+                >
+                  View Up Next Bouts ({upNextCount})
+                </button>
+              </div>
+            ) : filteredBouts.length === 0 ? (
+              <EmptyBoutsState
+                activeEventName={activeEventName}
+                filter={filter === 'UP_NEXT' ? 'WAITING' : filter}
+                fighterSearch={fighterSearch}
+                medalFilter={medalFilter}
+              />
+            ) : showSectionedAllView ? (
+              <div className="space-y-4">
+                {liveList.length > 0 && (
+                  <section>
+                    <BoutSectionHeader type="LIVE" count={liveList.length} />
+                    <div className="mt-2 space-y-2.5">
+                      {liveList.map((bout) => <BoutCard key={bout.id} bout={bout} />)}
+                    </div>
+                  </section>
+                )}
+
+                {upNextList.length > 0 && (
+                  <section>
+                    <BoutSectionHeader type="UP_NEXT" count={upNextList.length} />
+                    <div className="mt-2 space-y-2.5">
+                      {upNextList.map((bout) => <BoutCard key={bout.id} bout={bout} />)}
+                    </div>
+                  </section>
+                )}
+
+                {waitingList.length > 0 && (
+                  <section>
+                    <BoutSectionHeader type="WAITING" count={waitingList.length} />
+                    <div className="mt-2 space-y-2.5">
+                      {waitingList.map((bout) => <BoutCard key={bout.id} bout={bout} />)}
+                    </div>
+                  </section>
+                )}
+
+                {completedBoutsForSection.length > 0 && (
+                  <section>
+                    <CompletedBoutsSection
+                      bouts={completedBoutsForSection}
+                      isEventFullyCompleted={liveCount === 0 && waitingCount === 0}
+                      availableRings={availableRings}
+                      globalMedalFilter={medalFilter}
+                    />
+                  </section>
+                )}
+              </div>
+            ) : filter === 'COMPLETED' ? (
+              <CompletedBoutsSection
+                bouts={completedBoutsForSection}
+                isEventFullyCompleted={liveCount === 0 && waitingCount === 0}
+                availableRings={availableRings}
+                globalMedalFilter={medalFilter}
+              />
+            ) : (
+              <div className="space-y-2.5">
+                {filter !== 'ALL' && (
+                  <BoutSectionHeader
+                    type={filter === 'UP_NEXT' ? 'UP_NEXT' : filter}
+                    count={filteredBouts.length}
+                  />
+                )}
+                {filteredBouts.map((bout) => <BoutCard key={bout.id} bout={bout} />)}
+              </div>
+            )}
+          </div>
+        </PullToRefresh>
       </main>
 
       <footer className="mt-6 border-t border-slate-200 bg-white px-4 py-5 dark:border-slate-800 dark:bg-slate-900 sm:mt-8 sm:px-8 sm:py-6">
@@ -626,7 +867,9 @@ export default function App() {
           <p>© 2026 GOMO Muaythai Club. Spectator Live Arena &amp; Scoreboard Feed.</p>
         </div>
       </footer>
+
       {victoryBout && <VictoryOverlay bout={victoryBout} onDismiss={dismissVictory} />}
+
       {showStandings && (
         <TournamentStandingsModal
           eventName={activeEventName}
@@ -634,6 +877,26 @@ export default function App() {
           onDismiss={() => setShowStandings(false)}
         />
       )}
+
+      <EventInfoSheet
+        isOpen={showEventInfoSheet}
+        onClose={() => setShowEventInfoSheet(false)}
+        eventName={activeEventName}
+        eventLocation={activeEventDetails.location}
+        eventStartDate={activeEventDetails.startDate}
+        eventEndDate={activeEventDetails.endDate}
+        liveCount={liveCount}
+        waitingCount={waitingCount + upNextCount}
+        completedCount={completedCount}
+        activeRings={availableRings}
+        isFirebaseConnected={isFirebaseConnected}
+        onOpenStandings={() => setShowStandings(true)}
+        notificationsEnabled={notificationsEnabled}
+        onToggleNotifications={(enabled) => {
+          setNotificationsEnabled(enabled);
+          localStorage.setItem('gomo-live-notifications-enabled', enabled ? 'true' : 'false');
+        }}
+      />
     </div>
   );
 }

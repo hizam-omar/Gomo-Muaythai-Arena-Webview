@@ -19,6 +19,11 @@ export interface Bout {
   ring: string;
   weightCategory: string;
   status: BoutStatus;
+  isUpNext?: boolean;
+  currentRound?: string;
+  roundTimer?: string;
+  estimatedMinutes?: number;
+  waitOrder?: number;
   gomoCorner: 'RED' | 'BLUE';
   redName: string;
   redGym: string;
@@ -78,8 +83,35 @@ export interface Fighter {
 export interface FightRecord {
   id?: string | number;
   fighterId?: string | number;
-  medal?: string;
+  eventName?: string;
+  eventType?: string;
+  startDate?: string;
+  endDate?: string;
+  date?: string;
+  location?: string;
+  opponentName?: string;
+  opponentClub?: string;
+  weightCategory?: string;
+  boutNumber?: string;
+  tournamentRound?: string;
+  ring?: string;
+  status?: string;
+  corner?: string;
+  gomoCorner?: string;
   result?: string;
+  methodOrMedal?: string;
+  method?: string;
+  medal?: string;
+  score?: string;
+  redPoints?: string | number;
+  bluePoints?: string | number;
+  redName?: string;
+  blueName?: string;
+  redGym?: string;
+  blueGym?: string;
+  rounds?: RoundScore[];
+  completedAt?: number;
+  timestamp?: number;
 }
 
 export interface LiveFightCard {
