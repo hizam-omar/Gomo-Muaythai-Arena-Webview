@@ -117,7 +117,7 @@ function Field({ label, value, editing, type = 'text', onChange, options }: {
 }) {
   return (
     <div className="grid gap-1 border-b border-slate-100 py-2.5 last:border-b-0 dark:border-slate-800/80 sm:grid-cols-[minmax(145px,0.8fr)_minmax(0,1.2fr)] sm:items-center sm:gap-4">
-      <dt className="text-[12px] font-bold uppercase tracking-wide text-slate-400">{label}</dt>
+      <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{label}</dt>
       <dd className="m-0 min-w-0 text-sm font-bold text-slate-800 dark:text-slate-100">
         {editing && onChange ? options ? (
           <select value={String(value)} onChange={(event) => onChange(event.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:border-slate-700 dark:bg-slate-950 dark:focus:ring-red-950">
@@ -150,7 +150,7 @@ function EditInput({ label, value, onChange, type = 'text', required = false, pl
   const shouldUppercase = uppercase ?? type === 'text';
   return (
     <label className="block min-w-0">
-      <span className="mb-1 block text-[12px] font-bold text-slate-600 dark:text-slate-300">{label}{required && <span className="text-red-600"> *</span>}</span>
+      <span className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">{label}{required && <span className="text-red-600"> *</span>}</span>
       <input
         type={type}
         inputMode={type === 'number' ? 'decimal' : type === 'tel' ? 'tel' : undefined}
