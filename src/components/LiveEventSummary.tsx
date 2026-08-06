@@ -62,22 +62,6 @@ export function LiveEventSummary({
             {subText}
           </p>
 
-          {/* Sync status secondary line */}
-          <div className="mt-1.5 flex items-center gap-1.5 text-[10px] font-medium text-slate-400 dark:text-slate-500">
-            <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isFirebaseConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-            {/* <span>{syncText}</span> */}
-            {onSyncNow && (
-              <button
-                type="button"
-                onClick={onSyncNow}
-                className="ml-1 inline-flex items-center gap-0.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold transition underline"
-              >
-                Sync now
-              </button>
-            )}
-          </div>
-        </div>
-
         {/* Right side: Standings & Event Info Buttons (40-44px) */}
         <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
           <button
