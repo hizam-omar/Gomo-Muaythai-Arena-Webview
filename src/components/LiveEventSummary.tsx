@@ -65,7 +65,7 @@ export function LiveEventSummary({
           {/* Sync status secondary line */}
           <div className="mt-1.5 flex items-center gap-1.5 text-[10px] font-medium text-slate-400 dark:text-slate-500">
             <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isFirebaseConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-            <span>{syncText}</span>
+            {/* <span>{syncText}</span> */}
             {onSyncNow && (
               <button
                 type="button"
