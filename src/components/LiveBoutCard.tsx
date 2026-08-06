@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Flame, ListOrdered } from 'lucide-react';
+import { ChevronDown, ExternalLink, Flame, ListOrdered, Swords } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { Bout } from '../types';
 import { Avatar, PhotoPreviewModal } from './FighterAvatar';
@@ -47,71 +47,75 @@ export function LiveBoutCard({ bout }: LiveBoutCardProps) {
   const timerText = bout.roundTimer || '';
   const liveStatusText = timerText ? `${roundText} · ${timerText}` : roundText;
 
-  const hasScore = bout.redPoints !== '' || bout.bluePoints !== '' || bout.rounds.length > 0;
-  const redScoreDisplay = bout.redPoints || '0';
-  const blueScoreDisplay = bout.bluePoints || '0';
+  const hasScore = String(bout.redPoints ?? '').trim() !== '' || String(bout.bluePoints ?? '').trim() !== '' || bout.rounds.length > 0;
+  const redScoreDisplay = String(bout.redPoints ?? '').trim() || '–';
+  const blueScoreDisplay = String(bout.bluePoints ?? '').trim() || '–';
 
   const isRedGomo = bout.gomoCorner === 'RED' || bout.redGym.toLowerCase().includes('gomo');
   const isBlueGomo = bout.gomoCorner === 'BLUE' || bout.blueGym.toLowerCase().includes('gomo');
+  const currentRoundNumber = roundText.match(/\d+/)?.[0] || '';
 
   return (
-    <article className="relative overflow-hidden rounded-2xl border border-red-200 bg-white shadow-2xs dark:border-red-950 dark:bg-slate-900 transition-all">
+    <article aria-label={`Live bout ${bout.boutNumber}: ${bout.redName} versus ${bout.blueName}`} className="group/live relative overflow-hidden rounded-2xl border-2 border-red-400 bg-gradient-to-br from-white via-white to-red-50/70 shadow-[0_10px_32px_rgba(220,38,38,0.16)] transition-all duration-300 hover:-translate-y-0.5 hover:border-red-500 hover:shadow-[0_16px_42px_rgba(220,38,38,0.24)] motion-reduce:transform-none dark:border-red-800 dark:from-slate-900 dark:via-slate-900 dark:to-red-950/30">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 animate-pulse bg-[radial-gradient(circle_at_20%_0%,rgba(248,113,113,0.16),transparent_38%)] motion-reduce:animate-none" />
       {/* 1. Combined Top Row: Live status & Neutral Ring Badge */}
-      <div className="flex items-center justify-between px-3.5 py-2 bg-red-50/50 dark:bg-red-950/20 border-b border-slate-100 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2 w-2 shrink-0">
-            <span className="absolute h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-            <span className="relative h-2 w-2 rounded-full bg-red-600 dark:bg-red-500" />
+      <div className="relative flex min-h-12 items-center justify-between gap-2 border-b border-red-200 bg-gradient-to-r from-red-600 to-rose-600 px-3.5 py-2 text-white dark:border-red-900">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[12px] font-black uppercase tracking-wide text-red-700 shadow-sm">
+            <span className="relative flex h-2 w-2 shrink-0"><span className="absolute h-full w-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" /><span className="relative h-2 w-2 rounded-full bg-red-600" /></span>
+            Live now
           </span>
-          <span className="text-xs font-bold uppercase tracking-wide text-red-600 dark:text-red-400">
-            {liveStatusText}
-          </span>
+          <span aria-live="polite" className="truncate text-[12px] font-extrabold uppercase tracking-wide text-white">{liveStatusText}</span>
         </div>
 
-        <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300">
+        <span className="shrink-0 rounded-lg border border-white/30 bg-white/15 px-2.5 py-1 text-[12px] font-black text-white backdrop-blur-sm">
           {ringLabel}
         </span>
       </div>
 
       {/* 2. Simplified Metadata Row */}
-      <div className="px-3.5 py-1.5 border-b border-slate-50 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+      <div className="relative flex min-h-9 items-center gap-1.5 border-b border-red-100 px-3.5 py-1.5 text-[12px] font-semibold text-slate-500 dark:border-slate-800 dark:text-slate-400">
         <span className="font-extrabold text-slate-900 dark:text-white mr-1.5">Bout #{bout.boutNumber}</span>
         {metaInfo && <span className="truncate">{metaInfo}</span>}
       </div>
 
       {/* 3. Redesigned Fighter Matchup Layout */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-3.5 py-3">
+      <div className="relative grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-2.5 py-4 sm:gap-4 sm:px-4 sm:py-5">
         {/* Red Fighter Panel (Soft Red Tint) */}
-        <div className="flex items-center gap-2.5 min-w-0">
-          <Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={() => setPreviewPhoto({ src: bout.redAvatar, name: bout.redName, corner: 'red' })} />
+        <div className={`min-w-0 rounded-xl p-2 transition-all duration-300 ${isRedGomo ? 'bg-gradient-to-r from-red-100 to-amber-50 ring-2 ring-red-300 shadow-[0_8px_24px_rgba(220,38,38,0.18)] dark:from-red-950/70 dark:to-amber-950/20 dark:ring-red-800 sm:scale-[1.03]' : 'opacity-80 hover:opacity-100'}`}>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+          <div className={`shrink-0 rounded-full ${isRedGomo ? 'ring-4 ring-red-200 shadow-lg dark:ring-red-900' : ''}`}><Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={() => setPreviewPhoto({ src: bout.redAvatar, name: bout.redName, corner: 'red' })} /></div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1">
-              <span className="text-[10px] font-black tracking-wider text-red-600 dark:text-red-400">RED</span>
+              <span className="text-[12px] font-black tracking-wider text-red-600 dark:text-red-400">RED</span>
               {isRedGomo && (
-                <span className="rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 px-1.5 py-0.2 text-[8px] font-black uppercase">
-                  GOMO
+                <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-black uppercase text-white">
+                  Our fighter
                 </span>
               )}
             </div>
             {bout.redProfileUrl ? (
-              <a href={bout.redProfileUrl} className="block truncate text-xs sm:text-sm font-extrabold text-slate-900 underline decoration-red-400/60 underline-offset-2 hover:text-red-600 dark:text-white">
-                {bout.redName}
+              <a href={bout.redProfileUrl} aria-label={`View fighter profile for ${bout.redName}`} className="flex min-h-6 min-w-0 items-center gap-1 text-[13px] font-black text-slate-950 underline decoration-red-400/60 underline-offset-2 hover:text-red-600 dark:text-white sm:text-base">
+                <span className="truncate">{bout.redName}</span><ExternalLink className="h-3 w-3 shrink-0" />
               </a>
             ) : (
-              <h3 className="truncate text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+              <h3 className="truncate text-[13px] font-black text-slate-950 dark:text-white sm:text-base">
                 {bout.redName}
               </h3>
             )}
-            <p className="truncate text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+            <p className="truncate text-[12px] font-semibold text-slate-500 dark:text-slate-400">
               {formatGymName(bout.redGym)}
             </p>
           </div>
+          </div>
+          {isRedGomo && bout.redProfileUrl && <p className="mt-1.5 text-center text-[10px] font-black uppercase tracking-wide text-red-700 dark:text-red-300">Tap to view profile</p>}
         </div>
 
         {/* Dynamic High-Contrast Score Presentation (No "SCORE" label, bold 20-24px) */}
-        <div className="flex flex-col items-center justify-center px-1">
+        <div className="flex flex-col items-center justify-center px-0.5">
+          <div className="mb-1.5 grid h-8 w-8 place-items-center rounded-full bg-slate-950 text-white shadow-md dark:bg-white dark:text-slate-950"><Swords className="h-4 w-4" /></div>
           {hasScore ? (
-            <div className="flex items-center justify-center rounded-xl bg-slate-950 dark:bg-slate-900 px-3 py-1.5 text-white shadow-2xs">
+            <div className="flex items-center justify-center rounded-xl bg-slate-950 px-2.5 py-2 text-white shadow-lg ring-2 ring-white dark:bg-white dark:text-slate-950 dark:ring-slate-800 sm:px-3">
               <div className="font-combat text-xl font-black leading-none tracking-tight">
                 <span className="text-red-400">{redScoreDisplay}</span>
                 <span className="px-1 text-slate-500">—</span>
@@ -119,43 +123,46 @@ export function LiveBoutCard({ bout }: LiveBoutCardProps) {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-1.5 text-center dark:border-slate-800 dark:bg-slate-800/60">
-              <span className="text-[9px] font-extrabold uppercase tracking-wide text-slate-400 dark:text-slate-500">Score pending</span>
+            <div className="flex flex-col items-center justify-center rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
+              <span className="text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-300">Score pending</span>
             </div>
           )}
         </div>
 
         {/* Blue Fighter Panel (Soft Blue Tint) */}
-        <div className="flex flex-row-reverse items-center gap-2.5 min-w-0 text-right">
-          <Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={() => setPreviewPhoto({ src: bout.blueAvatar, name: bout.blueName, corner: 'blue' })} />
+        <div className={`min-w-0 rounded-xl p-2 text-right transition-all duration-300 ${isBlueGomo ? 'bg-gradient-to-l from-blue-100 to-amber-50 ring-2 ring-blue-300 shadow-[0_8px_24px_rgba(37,99,235,0.18)] dark:from-blue-950/70 dark:to-amber-950/20 dark:ring-blue-800 sm:scale-[1.03]' : 'opacity-80 hover:opacity-100'}`}>
+          <div className="flex min-w-0 flex-row-reverse items-center gap-2 sm:gap-2.5">
+          <div className={`shrink-0 rounded-full ${isBlueGomo ? 'ring-4 ring-blue-200 shadow-lg dark:ring-blue-900' : ''}`}><Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={() => setPreviewPhoto({ src: bout.blueAvatar, name: bout.blueName, corner: 'blue' })} /></div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-row-reverse items-center gap-1">
-              <span className="text-[10px] font-black tracking-wider text-blue-600 dark:text-blue-400">BLUE</span>
+              <span className="text-[12px] font-black tracking-wider text-blue-600 dark:text-blue-400">BLUE</span>
               {isBlueGomo && (
-                <span className="rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 px-1.5 py-0.2 text-[8px] font-black uppercase">
-                  GOMO
+                <span className="rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-black uppercase text-white">
+                  Our fighter
                 </span>
               )}
             </div>
             {bout.blueProfileUrl ? (
-              <a href={bout.blueProfileUrl} className="block truncate text-xs sm:text-sm font-extrabold text-slate-900 underline decoration-blue-400/60 underline-offset-2 hover:text-blue-600 dark:text-white">
-                {bout.blueName}
+              <a href={bout.blueProfileUrl} aria-label={`View fighter profile for ${bout.blueName}`} className="flex min-h-6 min-w-0 flex-row-reverse items-center gap-1 text-[13px] font-black text-slate-950 underline decoration-blue-400/60 underline-offset-2 hover:text-blue-600 dark:text-white sm:text-base">
+                <span className="truncate">{bout.blueName}</span><ExternalLink className="h-3 w-3 shrink-0" />
               </a>
             ) : (
-              <h3 className="truncate text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+              <h3 className="truncate text-[13px] font-black text-slate-950 dark:text-white sm:text-base">
                 {bout.blueName}
               </h3>
             )}
-            <p className="truncate text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+            <p className="truncate text-[12px] font-semibold text-slate-500 dark:text-slate-400">
               {formatGymName(bout.blueGym)}
             </p>
           </div>
+          </div>
+          {isBlueGomo && bout.blueProfileUrl && <p className="mt-1.5 text-center text-[10px] font-black uppercase tracking-wide text-blue-700 dark:text-blue-300">Tap to view profile</p>}
         </div>
       </div>
 
       {/* Streaks (Clean row if available) */}
       {(bout.redWinStreak || bout.blueWinStreak) ? (
-        <div className="flex items-center justify-between px-3.5 pb-2 text-[9px] font-extrabold text-orange-600 dark:text-orange-400">
+        <div className="relative flex items-center justify-between px-3.5 pb-2 text-[12px] font-extrabold text-orange-600 dark:text-orange-400">
           <div>
             {bout.redWinStreak && bout.redWinStreak > 0 ? (
               <span className="inline-flex items-center gap-1">
@@ -176,22 +183,22 @@ export function LiveBoutCard({ bout }: LiveBoutCardProps) {
       ) : null}
 
       {/* 4. Compact Round Scores Row (collapsed by default) */}
-      <div className="border-t border-slate-100 bg-white/50 px-3.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/40">
+      <div className="relative border-t border-red-100 bg-white/70 px-3.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/60">
         <button
           type="button"
           onClick={() => setScoresExpanded((prev) => !prev)}
           aria-expanded={scoresExpanded}
-          className="flex w-full items-center justify-between text-xs font-semibold text-slate-500 hover:text-red-600 dark:text-slate-400 transition min-h-[28px]"
+          className="flex min-h-11 w-full items-center justify-between rounded-lg text-[12px] font-semibold text-slate-500 transition hover:bg-red-50 hover:px-2 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:text-slate-400 dark:hover:bg-red-950/40"
         >
-          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-            <ListOrdered className="h-3 w-3" />
+          <span className="flex items-center gap-1.5 text-[12px] font-black text-slate-600 dark:text-slate-300">
+            <ListOrdered className="h-4 w-4" />
             Round scores
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-              {redScoreDisplay} – {blueScoreDisplay}
+            <span className="text-[12px] font-black text-slate-700 dark:text-slate-300">
+              {hasScore ? `${redScoreDisplay} – ${blueScoreDisplay}` : 'Pending'}
             </span>
-            <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${scoresExpanded ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 motion-reduce:transition-none ${scoresExpanded ? 'rotate-180' : ''}`} />
           </span>
         </button>
 
@@ -206,8 +213,8 @@ export function LiveBoutCard({ bout }: LiveBoutCardProps) {
               {bout.rounds.length > 0 ? (
                 <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
                   {bout.rounds.map((r) => (
-                    <div key={r.round} className="rounded-lg border border-slate-200 bg-white p-1.5 text-center shadow-2xs dark:border-slate-800 dark:bg-slate-950">
-                      <p className="text-[9px] font-black text-slate-400 uppercase">{r.round}</p>
+                    <div key={r.round} className={`rounded-lg border p-2 text-center shadow-2xs ${currentRoundNumber && r.round.match(/\d+/)?.[0] === currentRoundNumber ? 'border-red-400 bg-red-50 ring-2 ring-red-100 dark:border-red-700 dark:bg-red-950/40 dark:ring-red-950' : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950'}`}>
+                      <p className={`text-[12px] font-black uppercase ${currentRoundNumber && r.round.match(/\d+/)?.[0] === currentRoundNumber ? 'text-red-600 dark:text-red-400' : 'text-slate-400'}`}>{r.round}{currentRoundNumber && r.round.match(/\d+/)?.[0] === currentRoundNumber ? ' · LIVE' : ''}</p>
                       <p className="mt-0.5 text-xs font-black">
                         <span className="text-red-600">{r.red}</span>
                         <span className="px-1 text-slate-300">–</span>
@@ -217,7 +224,7 @@ export function LiveBoutCard({ bout }: LiveBoutCardProps) {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-[11px] font-semibold text-slate-400 py-1">
+                <p className="py-2 text-center text-[12px] font-semibold text-slate-400">
                   Official round points will display here as judges submit scores.
                 </p>
               )}
