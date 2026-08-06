@@ -56,8 +56,8 @@ export function LiveBoutCard({ bout }: LiveBoutCardProps) {
   const currentRoundNumber = roundText.match(/\d+/)?.[0] || '';
 
   return (
-    <article aria-label={`Live bout ${bout.boutNumber}: ${bout.redName} versus ${bout.blueName}`} className="group/live relative overflow-hidden rounded-2xl border-2 border-red-400 bg-gradient-to-br from-white via-white to-red-50/70 shadow-[0_10px_32px_rgba(220,38,38,0.16)] transition-all duration-300 hover:-translate-y-0.5 hover:border-red-500 hover:shadow-[0_16px_42px_rgba(220,38,38,0.24)] motion-reduce:transform-none dark:border-red-800 dark:from-slate-900 dark:via-slate-900 dark:to-red-950/30">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 animate-pulse bg-[radial-gradient(circle_at_20%_0%,rgba(248,113,113,0.16),transparent_38%)] motion-reduce:animate-none" />
+    <article aria-label={`Live bout ${bout.boutNumber}: ${bout.redName} versus ${bout.blueName}`} className="group/live relative overflow-hidden rounded-2xl border-2 border-red-400 bg-gradient-to-br from-white via-white to-red-50/70 shadow-[0_8px_22px_rgba(220,38,38,0.14)] transition-all duration-300 motion-reduce:transform-none dark:border-red-800 dark:from-slate-900 dark:via-slate-900 dark:to-red-950/30 sm:shadow-[0_10px_32px_rgba(220,38,38,0.16)] sm:hover:-translate-y-0.5 sm:hover:border-red-500 sm:hover:shadow-[0_16px_42px_rgba(220,38,38,0.24)]">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 animate-none bg-[radial-gradient(circle_at_20%_0%,rgba(248,113,113,0.16),transparent_38%)] motion-reduce:animate-none sm:animate-pulse" />
       {/* 1. Combined Top Row: Live status & Neutral Ring Badge */}
       <div className="relative flex min-h-12 items-center justify-between gap-2 border-b border-red-200 bg-gradient-to-r from-red-600 to-rose-600 px-3.5 py-2 text-white dark:border-red-900">
         <div className="flex min-w-0 items-center gap-2">
@@ -80,40 +80,40 @@ export function LiveBoutCard({ bout }: LiveBoutCardProps) {
       </div>
 
       {/* 3. Redesigned Fighter Matchup Layout */}
-      <div className="relative grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-2.5 py-4 sm:gap-4 sm:px-4 sm:py-5">
+      <div className="relative grid grid-cols-2 items-center gap-2 px-2.5 py-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-4 sm:px-4 sm:py-5">
         {/* Red Fighter Panel (Soft Red Tint) */}
-        <div className={`min-w-0 rounded-xl p-2 transition-all duration-300 ${isRedGomo ? 'bg-gradient-to-r from-red-100 to-amber-50 ring-2 ring-red-300 shadow-[0_8px_24px_rgba(220,38,38,0.18)] dark:from-red-950/70 dark:to-amber-950/20 dark:ring-red-800 sm:scale-[1.03]' : 'opacity-80 hover:opacity-100'}`}>
+        <div className={`order-1 min-w-0 rounded-xl p-2 transition-all duration-300 sm:order-none ${isRedGomo ? 'bg-gradient-to-r from-red-100 to-amber-50 ring-2 ring-red-300 shadow-[0_8px_24px_rgba(220,38,38,0.18)] dark:from-red-950/70 dark:to-amber-950/20 dark:ring-red-800 sm:scale-[1.03]' : 'opacity-85 sm:opacity-80 sm:hover:opacity-100'}`}>
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
           <div className={`shrink-0 rounded-full ${isRedGomo ? 'ring-4 ring-red-200 shadow-lg dark:ring-red-900' : ''}`}><Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={() => setPreviewPhoto({ src: bout.redAvatar, name: bout.redName, corner: 'red' })} /></div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1">
               <span className="text-[12px] font-black tracking-wider text-red-600 dark:text-red-400">RED</span>
               {isRedGomo && (
-                <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-black uppercase text-white">
-                  Our fighter
+                <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[12px] font-black uppercase text-white">
+                  <span className="sm:hidden">GOMO</span><span className="hidden sm:inline">Our fighter</span>
                 </span>
               )}
             </div>
             {bout.redProfileUrl ? (
               <a href={bout.redProfileUrl} aria-label={`View fighter profile for ${bout.redName}`} className="flex min-h-6 min-w-0 items-center gap-1 text-[13px] font-black text-slate-950 underline decoration-red-400/60 underline-offset-2 hover:text-red-600 dark:text-white sm:text-base">
-                <span className="truncate">{bout.redName}</span><ExternalLink className="h-3 w-3 shrink-0" />
+                <span className="truncate">{bout.redName}</span><ExternalLink className="hidden h-3 w-3 shrink-0 sm:block" />
               </a>
             ) : (
               <h3 className="truncate text-[13px] font-black text-slate-950 dark:text-white sm:text-base">
                 {bout.redName}
               </h3>
             )}
-            <p className="truncate text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+            <p className="hidden truncate text-[12px] font-semibold text-slate-500 dark:text-slate-400 sm:block">
               {formatGymName(bout.redGym)}
             </p>
           </div>
           </div>
-          {isRedGomo && bout.redProfileUrl && <p className="mt-1.5 text-center text-[10px] font-black uppercase tracking-wide text-red-700 dark:text-red-300">Tap to view profile</p>}
+          {isRedGomo && bout.redProfileUrl && <p className="mt-1.5 hidden text-center text-[12px] font-black uppercase tracking-wide text-red-700 dark:text-red-300 sm:block">Tap to view profile</p>}
         </div>
 
         {/* Dynamic High-Contrast Score Presentation (No "SCORE" label, bold 20-24px) */}
-        <div className="flex flex-col items-center justify-center px-0.5">
-          <div className="mb-1.5 grid h-8 w-8 place-items-center rounded-full bg-slate-950 text-white shadow-md dark:bg-white dark:text-slate-950"><Swords className="h-4 w-4" /></div>
+        <div className="order-3 col-span-2 flex flex-row items-center justify-center gap-2 px-0.5 pt-1 sm:order-none sm:col-span-1 sm:flex-col sm:gap-0 sm:pt-0">
+          <div className="grid h-8 w-8 place-items-center rounded-full bg-slate-950 text-white shadow-md dark:bg-white dark:text-slate-950 sm:mb-1.5"><Swords className="h-4 w-4" /></div>
           {hasScore ? (
             <div className="flex items-center justify-center rounded-xl bg-slate-950 px-2.5 py-2 text-white shadow-lg ring-2 ring-white dark:bg-white dark:text-slate-950 dark:ring-slate-800 sm:px-3">
               <div className="font-combat text-xl font-black leading-none tracking-tight">
@@ -130,39 +130,39 @@ export function LiveBoutCard({ bout }: LiveBoutCardProps) {
         </div>
 
         {/* Blue Fighter Panel (Soft Blue Tint) */}
-        <div className={`min-w-0 rounded-xl p-2 text-right transition-all duration-300 ${isBlueGomo ? 'bg-gradient-to-l from-blue-100 to-amber-50 ring-2 ring-blue-300 shadow-[0_8px_24px_rgba(37,99,235,0.18)] dark:from-blue-950/70 dark:to-amber-950/20 dark:ring-blue-800 sm:scale-[1.03]' : 'opacity-80 hover:opacity-100'}`}>
+        <div className={`order-2 min-w-0 rounded-xl p-2 text-right transition-all duration-300 sm:order-none ${isBlueGomo ? 'bg-gradient-to-l from-blue-100 to-amber-50 ring-2 ring-blue-300 shadow-[0_8px_24px_rgba(37,99,235,0.18)] dark:from-blue-950/70 dark:to-amber-950/20 dark:ring-blue-800 sm:scale-[1.03]' : 'opacity-85 sm:opacity-80 sm:hover:opacity-100'}`}>
           <div className="flex min-w-0 flex-row-reverse items-center gap-2 sm:gap-2.5">
           <div className={`shrink-0 rounded-full ${isBlueGomo ? 'ring-4 ring-blue-200 shadow-lg dark:ring-blue-900' : ''}`}><Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={() => setPreviewPhoto({ src: bout.blueAvatar, name: bout.blueName, corner: 'blue' })} /></div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-row-reverse items-center gap-1">
               <span className="text-[12px] font-black tracking-wider text-blue-600 dark:text-blue-400">BLUE</span>
               {isBlueGomo && (
-                <span className="rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-black uppercase text-white">
-                  Our fighter
+                <span className="rounded-full bg-blue-600 px-1.5 py-0.5 text-[12px] font-black uppercase text-white">
+                  <span className="sm:hidden">GOMO</span><span className="hidden sm:inline">Our fighter</span>
                 </span>
               )}
             </div>
             {bout.blueProfileUrl ? (
               <a href={bout.blueProfileUrl} aria-label={`View fighter profile for ${bout.blueName}`} className="flex min-h-6 min-w-0 flex-row-reverse items-center gap-1 text-[13px] font-black text-slate-950 underline decoration-blue-400/60 underline-offset-2 hover:text-blue-600 dark:text-white sm:text-base">
-                <span className="truncate">{bout.blueName}</span><ExternalLink className="h-3 w-3 shrink-0" />
+                <span className="truncate">{bout.blueName}</span><ExternalLink className="hidden h-3 w-3 shrink-0 sm:block" />
               </a>
             ) : (
               <h3 className="truncate text-[13px] font-black text-slate-950 dark:text-white sm:text-base">
                 {bout.blueName}
               </h3>
             )}
-            <p className="truncate text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+            <p className="hidden truncate text-[12px] font-semibold text-slate-500 dark:text-slate-400 sm:block">
               {formatGymName(bout.blueGym)}
             </p>
           </div>
           </div>
-          {isBlueGomo && bout.blueProfileUrl && <p className="mt-1.5 text-center text-[10px] font-black uppercase tracking-wide text-blue-700 dark:text-blue-300">Tap to view profile</p>}
+          {isBlueGomo && bout.blueProfileUrl && <p className="mt-1.5 hidden text-center text-[12px] font-black uppercase tracking-wide text-blue-700 dark:text-blue-300 sm:block">Tap to view profile</p>}
         </div>
       </div>
 
       {/* Streaks (Clean row if available) */}
       {(bout.redWinStreak || bout.blueWinStreak) ? (
-        <div className="relative flex items-center justify-between px-3.5 pb-2 text-[12px] font-extrabold text-orange-600 dark:text-orange-400">
+        <div className="relative hidden items-center justify-between px-3.5 pb-2 text-[12px] font-extrabold text-orange-600 dark:text-orange-400 sm:flex">
           <div>
             {bout.redWinStreak && bout.redWinStreak > 0 ? (
               <span className="inline-flex items-center gap-1">
