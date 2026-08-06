@@ -103,6 +103,8 @@ input,
 select,
 textarea {
   font: inherit;
+  font-size: 1rem;
+  font-weight: 400;
 }
 
 /* Keep interactive labels readable on compact mobile screens. */
