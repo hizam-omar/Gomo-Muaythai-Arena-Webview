@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { CheckCircle2, ChevronDown, Medal } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, ChevronDown, ExternalLink, Medal, Trophy } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { Bout } from '../types';
+import { Avatar, PhotoPreviewModal } from './FighterAvatar';
 
 interface CompletedBoutCardProps {
   bout: Bout;
@@ -38,6 +39,7 @@ function formatBoutMetadata(roundText: string, categoryText: string): string {
 
 export function CompletedBoutCard({ bout }: CompletedBoutCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState<{ src?: string; name: string; corner: 'red' | 'blue' } | null>(null);
 
   const ringLabel = bout.ring ? (bout.ring.toLowerCase().startsWith('ring') ? bout.ring : `Ring ${bout.ring}`) : 'Main Ring';
   const metaInfo = formatBoutMetadata(bout.tournamentRound, bout.weightCategory);
@@ -45,6 +47,13 @@ export function CompletedBoutCard({ bout }: CompletedBoutCardProps) {
   const result = bout.result.trim().toUpperCase();
   const medal = bout.medal.trim().toUpperCase();
   const hasMedal = medal !== '' && medal !== 'NONE';
+  const isGold = medal.includes('GOLD');
+  const isSilver = medal.includes('SILVER');
+  const isBronze = medal.includes('BRONZE');
+  const isRedGomo = bout.gomoCorner === 'RED';
+  const isBlueGomo = bout.gomoCorner === 'BLUE';
+  const gomoWon = result === 'WIN';
+  const gomoLost = result === 'LOSS';
 
   // Determine winner based on GOMO corner and result
   let isRedWinner = false;
@@ -107,6 +116,31 @@ export function CompletedBoutCard({ bout }: CompletedBoutCardProps) {
     }
   }
 
+  const outcomeLabel = isUnderReview ? 'Under review' : isGold ? 'Gold medal' : isSilver ? 'Silver medal' : isBronze ? 'Bronze medal' : gomoWon ? 'Win' : gomoLost ? 'Loss' : result || 'Completed';
+  const outcomeStyle = isGold
+    ? 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
+    : isSilver
+      ? 'border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200'
+      : isBronze
+        ? 'border-orange-300 bg-orange-50 text-orange-800 dark:border-orange-800 dark:bg-orange-950/50 dark:text-orange-300'
+        : gomoWon
+          ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+          : gomoLost
+            ? 'border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300'
+            : 'border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200';
+  const gomoResultLabel = gomoWon ? 'Win' : gomoLost ? 'Loss' : result === 'DRAW' ? 'Draw' : 'Result';
+  const gomoPanelStyle = isGold
+    ? 'border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-100/70 dark:border-amber-800 dark:from-amber-950/50 dark:to-slate-900'
+    : isSilver
+      ? 'border-slate-300 bg-gradient-to-br from-slate-50 to-slate-200/70 dark:border-slate-600 dark:from-slate-800 dark:to-slate-900'
+      : isBronze
+        ? 'border-orange-300 bg-gradient-to-br from-orange-50 to-orange-100/70 dark:border-orange-800 dark:from-orange-950/40 dark:to-slate-900'
+        : gomoWon
+          ? 'border-emerald-300 bg-gradient-to-br from-emerald-50 to-green-100/70 dark:border-emerald-800 dark:from-emerald-950/40 dark:to-slate-900'
+          : gomoLost
+            ? 'border-rose-200 bg-rose-50/70 dark:border-rose-900 dark:bg-rose-950/20'
+            : 'border-slate-200 bg-slate-50/70 dark:border-slate-700 dark:bg-slate-800/60';
+
   const finalScoreText = (bout.redPoints !== '' || bout.bluePoints !== '')
     ? `${bout.redPoints || '0'} – ${bout.bluePoints || '0'}`
     : '';
@@ -119,33 +153,27 @@ export function CompletedBoutCard({ bout }: CompletedBoutCardProps) {
   const methodLabel = cleanMethod.includes('Points') ? 'Points decision' : `Method · ${cleanMethod}`;
 
   return (
-    <article className="relative overflow-hidden rounded-[16px] border border-slate-200/80 bg-white/70 p-3.5 dark:border-slate-800 dark:bg-slate-900/60 transition-all shadow-none">
+    <article className={`relative overflow-hidden rounded-[16px] border bg-white/80 p-3 shadow-sm transition-all dark:bg-slate-900/70 sm:p-3.5 ${isGold ? 'border-amber-300/80' : gomoWon ? 'border-emerald-200' : gomoLost ? 'border-rose-200' : 'border-slate-200/80'} dark:border-slate-800`}>
       {/* 1. Status & Medal Top Row */}
       <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/60">
         <div className="flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider">
+          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[12px] font-extrabold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
             <CheckCircle2 className="h-3 w-3 shrink-0" />
             Done
           </span>
-          {hasMedal && (
-            <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
-              medal.includes('GOLD') ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400' :
-              medal.includes('SILVER') ? 'bg-slate-50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300' :
-              'bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400'
-            }`}>
-              {medal.includes('GOLD') ? '🥇' : medal.includes('SILVER') ? '🥈' : '🥉'}
-              <span className="ml-0.5">{medal.toLowerCase().replace(/^\b\w/g, c => c.toUpperCase())}</span>
-            </span>
-          )}
+          <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[12px] font-black uppercase ${outcomeStyle}`}>
+            {hasMedal ? <Medal className="h-3.5 w-3.5" /> : gomoWon ? <Trophy className="h-3.5 w-3.5" /> : null}
+            {outcomeLabel}
+          </span>
         </div>
 
-        <span className="rounded-md border border-slate-200/60 bg-slate-100/50 px-1.5 py-0.5 text-[11px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
+        <span className="rounded-md border border-slate-200/60 bg-slate-100/50 px-1.5 py-0.5 text-[12px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
           {ringLabel}
         </span>
       </div>
 
       {/* 2. Metadata Area */}
-      <div className="pt-2 pb-1.5 text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+      <div className="pt-2 pb-1.5 text-[12px] font-semibold text-slate-400 dark:text-slate-500">
         <span className="font-extrabold text-slate-800 dark:text-slate-300 mr-1.5">Bout #{bout.boutNumber}</span>
         {metaInfo && <span className="truncate">{metaInfo}</span>}
       </div>
@@ -161,21 +189,16 @@ export function CompletedBoutCard({ bout }: CompletedBoutCardProps) {
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           {/* Red Corner Fighter */}
-          <div className={`min-w-0 pr-1 ${isRedWinner ? 'font-bold' : ''}`}>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="h-1.5 w-1.5 rounded-full bg-red-600 dark:bg-red-500 shrink-0" aria-hidden="true" />
-              <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white leading-tight">
-                {bout.redName}
-              </span>
-              {isRedWinner && (
-                <span className="inline-flex items-center gap-0.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 px-1 py-0.2 text-[8px] font-bold">
-                  Winner
-                </span>
-              )}
+          <div className={`min-w-0 rounded-xl border p-2 ${isRedGomo ? `${gomoPanelStyle} shadow-sm` : isRedWinner ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20' : 'border-transparent opacity-70'}`}>
+            <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+              <div className={`rounded-full ${isRedGomo ? 'ring-2 ring-red-300 shadow-sm dark:ring-red-800' : ''}`}><Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={() => setPreviewPhoto({ src: bout.redAvatar, name: bout.redName, corner: 'red' })} /></div>
+              <div className="min-w-0 w-full">
+                <div className="flex flex-wrap items-center gap-1"><span className="text-[12px] font-black text-red-600">RED</span>{isRedWinner && <span className="rounded-md bg-emerald-600 px-1.5 py-0.5 text-[12px] font-black text-white">WINNER</span>}</div>
+                {bout.redProfileUrl ? <a href={bout.redProfileUrl} aria-label={`View fighter profile for ${bout.redName}`} className="flex min-h-6 items-center gap-1 text-[12px] font-black leading-tight text-slate-950 underline decoration-red-300 underline-offset-2 dark:text-white sm:text-sm"><span className="truncate">{bout.redName}</span>{isRedGomo && <ExternalLink className="h-3 w-3 shrink-0" />}</a> : <h3 className="truncate text-[12px] font-black leading-tight text-slate-950 dark:text-white sm:text-sm">{bout.redName}</h3>}
+                <span className="block truncate text-[12px] font-semibold text-slate-500 dark:text-slate-400">{formatGymName(bout.redGym)}</span>
+                {isRedGomo && <span className={`mt-1 inline-flex max-w-full justify-center whitespace-normal rounded-md border px-1.5 py-0.5 text-center text-[12px] font-black uppercase leading-tight ${outcomeStyle}`}>GOMO · {hasMedal ? `${outcomeLabel} · ${gomoResultLabel}` : gomoResultLabel}</span>}
+              </div>
             </div>
-            <span className="block mt-0.5 text-[10px] text-slate-400 dark:text-slate-500">
-              {formatGymName(bout.redGym)}
-            </span>
           </div>
 
           {/* Centered Score */}
@@ -192,28 +215,23 @@ export function CompletedBoutCard({ bout }: CompletedBoutCardProps) {
           </div>
 
           {/* Blue Corner Fighter */}
-          <div className={`min-w-0 pl-1 text-right ${isBlueWinner ? 'font-bold' : ''}`}>
-            <div className="flex items-center justify-end gap-1.5 flex-wrap">
-              {isBlueWinner && (
-                <span className="inline-flex items-center gap-0.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 px-1 py-0.2 text-[8px] font-bold">
-                  Winner
-                </span>
-              )}
-              <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white leading-tight">
-                {bout.blueName}
-              </span>
-              <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-500 shrink-0" aria-hidden="true" />
+          <div className={`min-w-0 rounded-xl border p-2 text-right ${isBlueGomo ? `${gomoPanelStyle} shadow-sm` : isBlueWinner ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20' : 'border-transparent opacity-70'}`}>
+            <div className="flex flex-col items-end gap-1.5 sm:flex-row-reverse sm:items-center sm:gap-2">
+              <div className={`rounded-full ${isBlueGomo ? 'ring-2 ring-blue-300 shadow-sm dark:ring-blue-800' : ''}`}><Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={() => setPreviewPhoto({ src: bout.blueAvatar, name: bout.blueName, corner: 'blue' })} /></div>
+              <div className="min-w-0 w-full">
+                <div className="flex flex-wrap items-center justify-end gap-1">{isBlueWinner && <span className="rounded-md bg-emerald-600 px-1.5 py-0.5 text-[12px] font-black text-white">WINNER</span>}<span className="text-[12px] font-black text-blue-600">BLUE</span></div>
+                {bout.blueProfileUrl ? <a href={bout.blueProfileUrl} aria-label={`View fighter profile for ${bout.blueName}`} className="flex min-h-6 flex-row-reverse items-center gap-1 text-[12px] font-black leading-tight text-slate-950 underline decoration-blue-300 underline-offset-2 dark:text-white sm:text-sm"><span className="truncate">{bout.blueName}</span>{isBlueGomo && <ExternalLink className="h-3 w-3 shrink-0" />}</a> : <h3 className="truncate text-[12px] font-black leading-tight text-slate-950 dark:text-white sm:text-sm">{bout.blueName}</h3>}
+                <span className="block truncate text-[12px] font-semibold text-slate-500 dark:text-slate-400">{formatGymName(bout.blueGym)}</span>
+                {isBlueGomo && <span className={`mt-1 inline-flex max-w-full justify-center whitespace-normal rounded-md border px-1.5 py-0.5 text-center text-[12px] font-black uppercase leading-tight ${outcomeStyle}`}>GOMO · {hasMedal ? `${outcomeLabel} · ${gomoResultLabel}` : gomoResultLabel}</span>}
+              </div>
             </div>
-            <span className="block mt-0.5 text-[10px] text-slate-400 dark:text-slate-500">
-              {formatGymName(bout.blueGym)}
-            </span>
           </div>
         </div>
       </div>
 
       {/* 4. Footer Actions Row */}
       <div className="flex justify-between items-center border-t border-slate-100/50 dark:border-slate-800/60 pt-1.5 mt-1">
-        <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500">
+        <span className="text-[12px] font-bold text-slate-400 dark:text-slate-500">
           {isUnderReview ? 'Result under review' : methodLabel}
         </span>
         <button
@@ -258,6 +276,7 @@ export function CompletedBoutCard({ bout }: CompletedBoutCardProps) {
           </motion.div>
         )}
       </AnimatePresence>
+      <PhotoPreviewModal preview={previewPhoto} onClose={() => setPreviewPhoto(null)} />
     </article>
   );
 }
