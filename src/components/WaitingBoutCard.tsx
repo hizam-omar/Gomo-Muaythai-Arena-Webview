@@ -44,90 +44,90 @@ export function WaitingBoutCard({ bout }: WaitingBoutCardProps) {
     ? `${bout.waitOrder} bouts waiting`
     : 'Waiting in queue';
 
-  const isRedGomo = bout.gomoCorner === 'RED' || bout.redGym.toLowerCase().includes('gomo');
-  const isBlueGomo = bout.gomoCorner === 'BLUE' || bout.blueGym.toLowerCase().includes('gomo');
+  const isRedGomo = bout.gomoCorner === 'RED';
+  const isBlueGomo = bout.gomoCorner === 'BLUE';
 
   return (
-    <article className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900 transition-all">
+    <article className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all dark:border-slate-800 dark:bg-slate-900 sm:shadow-2xs">
       {/* 1. Combined Top Row */}
-      <div className="flex items-center justify-between px-3.5 py-2 bg-slate-50 dark:bg-slate-950/40 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex min-h-11 items-center justify-between gap-2 border-b border-slate-100 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900 sm:bg-slate-50 sm:px-3.5 sm:dark:bg-slate-950/40">
         <div className="flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 px-2 py-0.5 text-[10px] font-extrabold uppercase">
+          <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-[12px] font-extrabold uppercase text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             <Clock3 className="h-3 w-3 shrink-0" />
             Waiting
           </span>
-          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+          <span className="truncate text-[12px] font-semibold text-slate-500 dark:text-slate-400">
             {waitOrderText}
           </span>
         </div>
 
-        <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300">
+        <span className="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[12px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
           {ringLabel}
         </span>
       </div>
 
       {/* 2. Simplified Metadata Row */}
-      <div className="px-3.5 py-1.5 border-b border-slate-50 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+      <div className="border-b border-slate-100 px-3 py-1.5 text-[12px] font-semibold text-slate-500 dark:border-slate-800 dark:text-slate-400 sm:px-3.5">
         <span className="font-extrabold text-slate-900 dark:text-white mr-1.5">Bout #{bout.boutNumber}</span>
         {metaInfo && <span className="truncate">{metaInfo}</span>}
       </div>
 
       {/* 3. Matchup Row */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-3.5 py-3 bg-slate-50/30 dark:bg-slate-900/40">
+      <div className="grid grid-cols-2 items-center gap-2 px-2.5 py-3 sm:grid-cols-[1fr_auto_1fr] sm:gap-3 sm:bg-slate-50/30 sm:px-3.5 sm:dark:bg-slate-900/40">
         {/* Red Fighter Panel */}
-        <div className="flex items-center gap-2.5 min-w-0">
-          <Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={() => setPreviewPhoto({ src: bout.redAvatar, name: bout.redName, corner: 'red' })} />
+        <div className={`order-1 flex min-w-0 items-center gap-2 rounded-lg p-2 sm:order-none sm:gap-2.5 sm:bg-transparent sm:p-0 ${isRedGomo ? 'bg-red-50/70 dark:bg-red-950/20' : ''}`}>
+          <div className={isRedGomo ? '' : 'hidden sm:block'}><Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={() => setPreviewPhoto({ src: bout.redAvatar, name: bout.redName, corner: 'red' })} /></div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1">
-              <span className="text-[10px] font-black tracking-wider text-red-600 dark:text-red-400">RED</span>
+              <span className="text-[12px] font-black tracking-wider text-red-600 dark:text-red-400">RED</span>
               {isRedGomo && (
-                <span className="rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 px-1.5 py-0.2 text-[8px] font-black uppercase">
+                <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[12px] font-black uppercase text-red-600 dark:bg-red-950/60 dark:text-red-400">
                   GOMO
                 </span>
               )}
             </div>
             {bout.redProfileUrl ? (
-              <a href={bout.redProfileUrl} className="block truncate text-xs sm:text-sm font-extrabold text-slate-900 underline decoration-red-400/60 underline-offset-2 hover:text-red-600 dark:text-white">
+              <a href={bout.redProfileUrl} className="block truncate text-[12px] font-extrabold text-slate-900 underline decoration-red-400/60 underline-offset-2 hover:text-red-600 dark:text-white sm:text-sm">
                 {bout.redName}
               </a>
             ) : (
-              <h3 className="truncate text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+              <h3 className="truncate text-[12px] font-extrabold text-slate-900 dark:text-white sm:text-sm">
                 {bout.redName}
               </h3>
             )}
-            <p className="truncate text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+            <p className="hidden truncate text-[12px] font-semibold text-slate-500 dark:text-slate-400 sm:block">
               {formatGymName(bout.redGym)}
             </p>
           </div>
         </div>
 
         {/* VS Circle */}
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-[9px] font-extrabold text-slate-500 dark:bg-slate-800 dark:text-slate-400 shadow-2xs">
+        <div className="order-3 col-span-2 mx-auto flex h-7 min-w-12 items-center justify-center rounded-full bg-slate-100 px-2 text-[12px] font-extrabold text-slate-500 shadow-2xs dark:bg-slate-800 dark:text-slate-400 sm:order-none sm:col-span-1 sm:h-7 sm:w-7 sm:min-w-0 sm:px-0 sm:text-[9px]">
           VS
         </div>
 
         {/* Blue Fighter Panel */}
-        <div className="flex flex-row-reverse items-center gap-2.5 min-w-0 text-right">
-          <Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={() => setPreviewPhoto({ src: bout.blueAvatar, name: bout.blueName, corner: 'blue' })} />
+        <div className={`order-2 flex min-w-0 flex-row-reverse items-center gap-2 rounded-lg p-2 text-right sm:order-none sm:gap-2.5 sm:bg-transparent sm:p-0 ${isBlueGomo ? 'bg-blue-50/70 dark:bg-blue-950/20' : ''}`}>
+          <div className={isBlueGomo ? '' : 'hidden sm:block'}><Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={() => setPreviewPhoto({ src: bout.blueAvatar, name: bout.blueName, corner: 'blue' })} /></div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-row-reverse items-center gap-1">
-              <span className="text-[10px] font-black tracking-wider text-blue-600 dark:text-blue-400">BLUE</span>
+              <span className="text-[12px] font-black tracking-wider text-blue-600 dark:text-blue-400">BLUE</span>
               {isBlueGomo && (
-                <span className="rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 px-1.5 py-0.2 text-[8px] font-black uppercase">
+                <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[12px] font-black uppercase text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
                   GOMO
                 </span>
               )}
             </div>
             {bout.blueProfileUrl ? (
-              <a href={bout.blueProfileUrl} className="block truncate text-xs sm:text-sm font-extrabold text-slate-900 underline decoration-blue-400/60 underline-offset-2 hover:text-blue-600 dark:text-white">
+              <a href={bout.blueProfileUrl} className="block truncate text-[12px] font-extrabold text-slate-900 underline decoration-blue-400/60 underline-offset-2 hover:text-blue-600 dark:text-white sm:text-sm">
                 {bout.blueName}
               </a>
             ) : (
-              <h3 className="truncate text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+              <h3 className="truncate text-[12px] font-extrabold text-slate-900 dark:text-white sm:text-sm">
                 {bout.blueName}
               </h3>
             )}
-            <p className="truncate text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+            <p className="hidden truncate text-[12px] font-semibold text-slate-500 dark:text-slate-400 sm:block">
               {formatGymName(bout.blueGym)}
             </p>
           </div>

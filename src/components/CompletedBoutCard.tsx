@@ -130,13 +130,13 @@ export function CompletedBoutCard({ bout }: CompletedBoutCardProps) {
             : 'border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200';
   const gomoResultLabel = gomoWon ? 'Win' : gomoLost ? 'Loss' : result === 'DRAW' ? 'Draw' : 'Result';
   const gomoPanelStyle = isGold
-    ? 'border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-100/70 dark:border-amber-800 dark:from-amber-950/50 dark:to-slate-900'
+    ? 'border-amber-300 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/20 sm:bg-gradient-to-br sm:from-amber-50 sm:to-yellow-100/70 sm:dark:from-amber-950/50 sm:dark:to-slate-900'
     : isSilver
-      ? 'border-slate-300 bg-gradient-to-br from-slate-50 to-slate-200/70 dark:border-slate-600 dark:from-slate-800 dark:to-slate-900'
+      ? 'border-slate-300 bg-slate-50 dark:border-slate-600 dark:bg-slate-800/60 sm:bg-gradient-to-br sm:from-slate-50 sm:to-slate-200/70 sm:dark:from-slate-800 sm:dark:to-slate-900'
       : isBronze
-        ? 'border-orange-300 bg-gradient-to-br from-orange-50 to-orange-100/70 dark:border-orange-800 dark:from-orange-950/40 dark:to-slate-900'
+        ? 'border-orange-300 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20 sm:bg-gradient-to-br sm:from-orange-50 sm:to-orange-100/70 sm:dark:from-orange-950/40 sm:dark:to-slate-900'
         : gomoWon
-          ? 'border-emerald-300 bg-gradient-to-br from-emerald-50 to-green-100/70 dark:border-emerald-800 dark:from-emerald-950/40 dark:to-slate-900'
+          ? 'border-emerald-300 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/20 sm:bg-gradient-to-br sm:from-emerald-50 sm:to-green-100/70 sm:dark:from-emerald-950/40 sm:dark:to-slate-900'
           : gomoLost
             ? 'border-rose-200 bg-rose-50/70 dark:border-rose-900 dark:bg-rose-950/20'
             : 'border-slate-200 bg-slate-50/70 dark:border-slate-700 dark:bg-slate-800/60';
@@ -189,14 +189,14 @@ export function CompletedBoutCard({ bout }: CompletedBoutCardProps) {
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           {/* Red Corner Fighter */}
-          <div className={`min-w-0 rounded-xl border p-2 ${isRedGomo ? `${gomoPanelStyle} shadow-sm` : isRedWinner ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20' : 'border-transparent opacity-70'}`}>
+          <div className={`min-w-0 rounded-lg border p-2 sm:rounded-xl ${isRedGomo ? `${gomoPanelStyle} sm:shadow-sm` : isRedWinner ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20' : 'border-transparent opacity-70'}`}>
             <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-2">
-              <div className={`rounded-full ${isRedGomo ? 'ring-2 ring-red-300 shadow-sm dark:ring-red-800' : ''}`}><Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={() => setPreviewPhoto({ src: bout.redAvatar, name: bout.redName, corner: 'red' })} /></div>
+              <div className={`${isRedGomo ? 'rounded-full ring-2 ring-red-200 dark:ring-red-900 sm:ring-red-300 sm:shadow-sm sm:dark:ring-red-800' : 'hidden sm:block'}`}><Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={() => setPreviewPhoto({ src: bout.redAvatar, name: bout.redName, corner: 'red' })} /></div>
               <div className="min-w-0 w-full">
-                <div className="flex flex-wrap items-center gap-1"><span className="text-[12px] font-black text-red-600">RED</span>{isRedWinner && <span className="rounded-md bg-emerald-600 px-1.5 py-0.5 text-[12px] font-black text-white">WINNER</span>}</div>
+                <div className="flex flex-wrap items-center gap-1"><span className="text-[12px] font-black text-red-600">RED</span>{isRedGomo && <span className="rounded bg-slate-900 px-1.5 py-0.5 text-[12px] font-black text-white dark:bg-white dark:text-slate-900">GOMO</span>}{isRedWinner && <span className="rounded-md bg-emerald-600 px-1.5 py-0.5 text-[12px] font-black text-white"><span className="sm:hidden">WIN</span><span className="hidden sm:inline">WINNER</span></span>}</div>
                 {bout.redProfileUrl ? <a href={bout.redProfileUrl} aria-label={`View fighter profile for ${bout.redName}`} className="flex min-h-6 items-center gap-1 text-[12px] font-black leading-tight text-slate-950 underline decoration-red-300 underline-offset-2 dark:text-white sm:text-sm"><span className="truncate">{bout.redName}</span>{isRedGomo && <ExternalLink className="h-3 w-3 shrink-0" />}</a> : <h3 className="truncate text-[12px] font-black leading-tight text-slate-950 dark:text-white sm:text-sm">{bout.redName}</h3>}
                 <span className="block truncate text-[12px] font-semibold text-slate-500 dark:text-slate-400">{formatGymName(bout.redGym)}</span>
-                {isRedGomo && <span className={`mt-1 inline-flex max-w-full justify-center whitespace-normal rounded-md border px-1.5 py-0.5 text-center text-[12px] font-black uppercase leading-tight ${outcomeStyle}`}>GOMO · {hasMedal ? `${outcomeLabel} · ${gomoResultLabel}` : gomoResultLabel}</span>}
+                {isRedGomo && <span className={`mt-1 hidden max-w-full justify-center whitespace-normal rounded-md border px-1.5 py-0.5 text-center text-[12px] font-black uppercase leading-tight sm:inline-flex ${outcomeStyle}`}>GOMO · {hasMedal ? `${outcomeLabel} · ${gomoResultLabel}` : gomoResultLabel}</span>}
               </div>
             </div>
           </div>
@@ -215,14 +215,14 @@ export function CompletedBoutCard({ bout }: CompletedBoutCardProps) {
           </div>
 
           {/* Blue Corner Fighter */}
-          <div className={`min-w-0 rounded-xl border p-2 text-right ${isBlueGomo ? `${gomoPanelStyle} shadow-sm` : isBlueWinner ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20' : 'border-transparent opacity-70'}`}>
+          <div className={`min-w-0 rounded-lg border p-2 text-right sm:rounded-xl ${isBlueGomo ? `${gomoPanelStyle} sm:shadow-sm` : isBlueWinner ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20' : 'border-transparent opacity-70'}`}>
             <div className="flex flex-col items-end gap-1.5 sm:flex-row-reverse sm:items-center sm:gap-2">
-              <div className={`rounded-full ${isBlueGomo ? 'ring-2 ring-blue-300 shadow-sm dark:ring-blue-800' : ''}`}><Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={() => setPreviewPhoto({ src: bout.blueAvatar, name: bout.blueName, corner: 'blue' })} /></div>
+              <div className={`${isBlueGomo ? 'rounded-full ring-2 ring-blue-200 dark:ring-blue-900 sm:ring-blue-300 sm:shadow-sm sm:dark:ring-blue-800' : 'hidden sm:block'}`}><Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={() => setPreviewPhoto({ src: bout.blueAvatar, name: bout.blueName, corner: 'blue' })} /></div>
               <div className="min-w-0 w-full">
-                <div className="flex flex-wrap items-center justify-end gap-1">{isBlueWinner && <span className="rounded-md bg-emerald-600 px-1.5 py-0.5 text-[12px] font-black text-white">WINNER</span>}<span className="text-[12px] font-black text-blue-600">BLUE</span></div>
+                <div className="flex flex-wrap items-center justify-end gap-1">{isBlueWinner && <span className="rounded-md bg-emerald-600 px-1.5 py-0.5 text-[12px] font-black text-white"><span className="sm:hidden">WIN</span><span className="hidden sm:inline">WINNER</span></span>}{isBlueGomo && <span className="rounded bg-slate-900 px-1.5 py-0.5 text-[12px] font-black text-white dark:bg-white dark:text-slate-900">GOMO</span>}<span className="text-[12px] font-black text-blue-600">BLUE</span></div>
                 {bout.blueProfileUrl ? <a href={bout.blueProfileUrl} aria-label={`View fighter profile for ${bout.blueName}`} className="flex min-h-6 flex-row-reverse items-center gap-1 text-[12px] font-black leading-tight text-slate-950 underline decoration-blue-300 underline-offset-2 dark:text-white sm:text-sm"><span className="truncate">{bout.blueName}</span>{isBlueGomo && <ExternalLink className="h-3 w-3 shrink-0" />}</a> : <h3 className="truncate text-[12px] font-black leading-tight text-slate-950 dark:text-white sm:text-sm">{bout.blueName}</h3>}
                 <span className="block truncate text-[12px] font-semibold text-slate-500 dark:text-slate-400">{formatGymName(bout.blueGym)}</span>
-                {isBlueGomo && <span className={`mt-1 inline-flex max-w-full justify-center whitespace-normal rounded-md border px-1.5 py-0.5 text-center text-[12px] font-black uppercase leading-tight ${outcomeStyle}`}>GOMO · {hasMedal ? `${outcomeLabel} · ${gomoResultLabel}` : gomoResultLabel}</span>}
+                {isBlueGomo && <span className={`mt-1 hidden max-w-full justify-center whitespace-normal rounded-md border px-1.5 py-0.5 text-center text-[12px] font-black uppercase leading-tight sm:inline-flex ${outcomeStyle}`}>GOMO · {hasMedal ? `${outcomeLabel} · ${gomoResultLabel}` : gomoResultLabel}</span>}
               </div>
             </div>
           </div>

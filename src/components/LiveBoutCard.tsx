@@ -56,19 +56,19 @@ export function LiveBoutCard({ bout }: LiveBoutCardProps) {
   const currentRoundNumber = roundText.match(/\d+/)?.[0] || '';
 
   return (
-    <article aria-label={`Live bout ${bout.boutNumber}: ${bout.redName} versus ${bout.blueName}`} className="group/live relative overflow-hidden rounded-2xl border-2 border-red-400 bg-gradient-to-br from-white via-white to-red-50/70 shadow-[0_8px_22px_rgba(220,38,38,0.14)] transition-all duration-300 motion-reduce:transform-none dark:border-red-800 dark:from-slate-900 dark:via-slate-900 dark:to-red-950/30 sm:shadow-[0_10px_32px_rgba(220,38,38,0.16)] sm:hover:-translate-y-0.5 sm:hover:border-red-500 sm:hover:shadow-[0_16px_42px_rgba(220,38,38,0.24)]">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 animate-none bg-[radial-gradient(circle_at_20%_0%,rgba(248,113,113,0.16),transparent_38%)] motion-reduce:animate-none sm:animate-pulse" />
+    <article aria-label={`Live bout ${bout.boutNumber}: ${bout.redName} versus ${bout.blueName}`} className="group/live relative overflow-hidden rounded-2xl border border-red-300 bg-white shadow-sm transition-all duration-300 motion-reduce:transform-none dark:border-red-900 dark:bg-slate-900 sm:border-2 sm:border-red-400 sm:bg-gradient-to-br sm:from-white sm:via-white sm:to-red-50/70 sm:shadow-[0_10px_32px_rgba(220,38,38,0.16)] sm:hover:-translate-y-0.5 sm:hover:border-red-500 sm:hover:shadow-[0_16px_42px_rgba(220,38,38,0.24)] sm:dark:border-red-800 sm:dark:from-slate-900 sm:dark:via-slate-900 sm:dark:to-red-950/30">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(circle_at_20%_0%,rgba(248,113,113,0.16),transparent_38%)] motion-reduce:animate-none sm:block sm:animate-pulse" />
       {/* 1. Combined Top Row: Live status & Neutral Ring Badge */}
-      <div className="relative flex min-h-12 items-center justify-between gap-2 border-b border-red-200 bg-gradient-to-r from-red-600 to-rose-600 px-3.5 py-2 text-white dark:border-red-900">
+      <div className="relative flex min-h-11 items-center justify-between gap-2 border-b border-red-100 bg-white px-3 py-2 text-red-700 dark:border-red-950 dark:bg-slate-900 sm:min-h-12 sm:bg-gradient-to-r sm:from-red-600 sm:to-rose-600 sm:px-3.5 sm:text-white">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[12px] font-black uppercase tracking-wide text-red-700 shadow-sm">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-red-600 px-2 py-1 text-[12px] font-black uppercase tracking-wide text-white sm:rounded-full sm:bg-white sm:px-2.5 sm:text-red-700 sm:shadow-sm">
             <span className="relative flex h-2 w-2 shrink-0"><span className="absolute h-full w-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" /><span className="relative h-2 w-2 rounded-full bg-red-600" /></span>
             Live now
           </span>
-          <span aria-live="polite" className="truncate text-[12px] font-extrabold uppercase tracking-wide text-white">{liveStatusText}</span>
+          <span aria-live="polite" className="truncate text-[12px] font-extrabold uppercase tracking-wide text-red-700 dark:text-red-300 sm:text-white">{liveStatusText}</span>
         </div>
 
-        <span className="shrink-0 rounded-lg border border-white/30 bg-white/15 px-2.5 py-1 text-[12px] font-black text-white backdrop-blur-sm">
+        <span className="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[12px] font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 sm:rounded-lg sm:border-white/30 sm:bg-white/15 sm:px-2.5 sm:font-black sm:text-white sm:backdrop-blur-sm">
           {ringLabel}
         </span>
       </div>
@@ -82,9 +82,9 @@ export function LiveBoutCard({ bout }: LiveBoutCardProps) {
       {/* 3. Redesigned Fighter Matchup Layout */}
       <div className="relative grid grid-cols-2 items-center gap-2 px-2.5 py-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-4 sm:px-4 sm:py-5">
         {/* Red Fighter Panel (Soft Red Tint) */}
-        <div className={`order-1 min-w-0 rounded-xl p-2 transition-all duration-300 sm:order-none ${isRedGomo ? 'bg-gradient-to-r from-red-100 to-amber-50 ring-2 ring-red-300 shadow-[0_8px_24px_rgba(220,38,38,0.18)] dark:from-red-950/70 dark:to-amber-950/20 dark:ring-red-800 sm:scale-[1.03]' : 'opacity-85 sm:opacity-80 sm:hover:opacity-100'}`}>
+        <div className={`order-1 min-w-0 rounded-lg p-2 transition-all duration-300 sm:order-none sm:rounded-xl ${isRedGomo ? 'border border-red-200 bg-red-50/60 dark:border-red-900 dark:bg-red-950/20 sm:scale-[1.03] sm:border-0 sm:bg-gradient-to-r sm:from-red-100 sm:to-amber-50 sm:ring-2 sm:ring-red-300 sm:shadow-[0_8px_24px_rgba(220,38,38,0.18)] sm:dark:from-red-950/70 sm:dark:to-amber-950/20 sm:dark:ring-red-800' : 'opacity-85 sm:opacity-80 sm:hover:opacity-100'}`}>
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
-          <div className={`shrink-0 rounded-full ${isRedGomo ? 'ring-4 ring-red-200 shadow-lg dark:ring-red-900' : ''}`}><Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={() => setPreviewPhoto({ src: bout.redAvatar, name: bout.redName, corner: 'red' })} /></div>
+          <div className={`shrink-0 rounded-full ${isRedGomo ? 'ring-2 ring-red-200 dark:ring-red-900 sm:ring-4 sm:shadow-lg' : ''}`}><Avatar src={bout.redAvatar} name={bout.redName} corner="red" onPreview={() => setPreviewPhoto({ src: bout.redAvatar, name: bout.redName, corner: 'red' })} /></div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1">
               <span className="text-[12px] font-black tracking-wider text-red-600 dark:text-red-400">RED</span>
@@ -130,9 +130,9 @@ export function LiveBoutCard({ bout }: LiveBoutCardProps) {
         </div>
 
         {/* Blue Fighter Panel (Soft Blue Tint) */}
-        <div className={`order-2 min-w-0 rounded-xl p-2 text-right transition-all duration-300 sm:order-none ${isBlueGomo ? 'bg-gradient-to-l from-blue-100 to-amber-50 ring-2 ring-blue-300 shadow-[0_8px_24px_rgba(37,99,235,0.18)] dark:from-blue-950/70 dark:to-amber-950/20 dark:ring-blue-800 sm:scale-[1.03]' : 'opacity-85 sm:opacity-80 sm:hover:opacity-100'}`}>
+        <div className={`order-2 min-w-0 rounded-lg p-2 text-right transition-all duration-300 sm:order-none sm:rounded-xl ${isBlueGomo ? 'border border-blue-200 bg-blue-50/60 dark:border-blue-900 dark:bg-blue-950/20 sm:scale-[1.03] sm:border-0 sm:bg-gradient-to-l sm:from-blue-100 sm:to-amber-50 sm:ring-2 sm:ring-blue-300 sm:shadow-[0_8px_24px_rgba(37,99,235,0.18)] sm:dark:from-blue-950/70 sm:dark:to-amber-950/20 sm:dark:ring-blue-800' : 'opacity-85 sm:opacity-80 sm:hover:opacity-100'}`}>
           <div className="flex min-w-0 flex-row-reverse items-center gap-2 sm:gap-2.5">
-          <div className={`shrink-0 rounded-full ${isBlueGomo ? 'ring-4 ring-blue-200 shadow-lg dark:ring-blue-900' : ''}`}><Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={() => setPreviewPhoto({ src: bout.blueAvatar, name: bout.blueName, corner: 'blue' })} /></div>
+          <div className={`shrink-0 rounded-full ${isBlueGomo ? 'ring-2 ring-blue-200 dark:ring-blue-900 sm:ring-4 sm:shadow-lg' : ''}`}><Avatar src={bout.blueAvatar} name={bout.blueName} corner="blue" onPreview={() => setPreviewPhoto({ src: bout.blueAvatar, name: bout.blueName, corner: 'blue' })} /></div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-row-reverse items-center gap-1">
               <span className="text-[12px] font-black tracking-wider text-blue-600 dark:text-blue-400">BLUE</span>
